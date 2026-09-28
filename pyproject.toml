@@ -1,0 +1,45 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "mother"
+version = "0.1.0"
+description = "Instalador, actualizador y diagnóstico del ecosistema de herramientas de Programación 1 (siempre desde git)"
+readme = "README.md"
+license = {text = "GPL-3.0-or-later"}
+authors = [
+    {name = "Martín René Vilugrón", email = "martinvilu@gmail.com"}
+]
+maintainers = [
+    {name = "Programación I [B6003] - UNRN Andina"}
+]
+requires-python = ">=3.11"
+keywords = ["education", "c-programming", "pedagogical-tools", "unrn"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Education",
+    "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Education",
+]
+# Sin dependencias: mother tiene que correr antes que cualquier otra herramienta.
+dependencies = []
+
+[project.urls]
+Homepage = "https://github.com/INGCOM-UNRN-P1/mother"
+Repository = "https://github.com/INGCOM-UNRN-P1/mother.git"
+Issues = "https://github.com/INGCOM-UNRN-P1/mother/issues"
+
+[project.scripts]
+mother = "mother.cli:main"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.0",
+]

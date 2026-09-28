@@ -1,0 +1,631 @@
+# Manifiesto único del ecosistema de herramientas de Programación I (UNRN Andina).
+#
+# Fuente de verdad para los scripts de p1-tools (clonado, instalación, salud),
+# para el CI de integración (ecosistema-e2e) y para la documentación. Se lee
+# con scripts/ecosistema.py (`listar`, `instalar`, `verificar`, …).
+#
+# Campos de cada [[repo]]:
+#   nombre         identificador (y carpeta local salvo que `carpeta` diga otra)
+#   carpeta        ruta local relativa a dev/tools, si difiere de `nombre`
+#   url            repositorio git (las herramientas se instalan SIEMPRE desde acá:
+#                  varios nombres de paquete están tomados en PyPI por terceros)
+#   tipo           cli | biblioteca | extension-vscode | apps-script | contenido
+#                  | plantilla | libreria-c | ejemplo | entorno | documentacion
+#                  | android | especificacion
+#   paquete        nombre del paquete Python (tipo cli/biblioteca)
+#   ejecutables    comandos que instala
+#   extras         extras a instalar junto con el paquete
+#   perfiles       estudiante | analisis | docente | contenido | aula
+#   plugin_ripley  nombre del entry-point `ripley.plugins`, si tiene
+#   sistema        programas del sistema que necesita (para doctor y el CI)
+#   estado         activo | deprecado | especificacion | ajeno | sin-publicar
+#                  (sin-publicar: repo creado localmente que todavía no está en GitHub;
+#                  no se clona ni se instala hasta publicarlo y pasarlo a activo)
+schema_version = 1
+
+[perfiles]
+estudiante = "Herramientas de uso diario de los estudiantes (MANUAL_ESTUDIANTE.md)."
+analisis = "Satélites de análisis de C que orquesta ripley."
+docente = "Corrección, evaluación y gestión de la cursada."
+contenido = "Producción de material: apunte, ejercicios, exámenes y bancos de preguntas."
+aula = "Clases (Google Meet y Slides) y exámenes supervisados."
+
+# ─────────────────────────── Estudiante y núcleo de análisis ───────────────────────────
+
+[[repo]]
+nombre = "daedalus"
+url = "https://github.com/INGCOM-UNRN-P1/daedalus"
+tipo = "cli"
+paquete = "daedalus"
+ejecutables = ["daedalus"]
+perfiles = ["estudiante", "analisis"]
+plugin_ripley = "compiler"
+sistema = ["gcc"]
+estado = "activo"
+
+[[repo]]
+nombre = "gaff"
+url = "https://github.com/INGCOM-UNRN-P1/gaff"
+tipo = "cli"
+paquete = "gaff"
+ejecutables = ["gaff"]
+perfiles = ["estudiante", "analisis"]
+plugin_ripley = "style"
+sistema = []
+estado = "activo"
+
+[[repo]]
+nombre = "hal"
+url = "https://github.com/INGCOM-UNRN-P1/hal"
+tipo = "cli"
+paquete = "hal"
+ejecutables = ["hal"]
+perfiles = ["estudiante", "analisis"]
+sistema = ["gcc", "gdb", "valgrind"]
+estado = "activo"
+
+[[repo]]
+nombre = "bishop"
+url = "https://github.com/INGCOM-UNRN-P1/bishop"
+tipo = "cli"
+paquete = "bishop"
+ejecutables = ["bishop"]
+perfiles = ["estudiante", "analisis"]
+plugin_ripley = "bishop"
+sistema = ["gcc", "gdb"]
+estado = "activo"
+
+[[repo]]
+nombre = "spunkmeyer"
+url = "https://github.com/INGCOM-UNRN-P1/spunkmeyer"
+tipo = "cli"
+paquete = "spunkmeyer"
+ejecutables = ["spunkmeyer"]
+perfiles = ["estudiante", "analisis"]
+plugin_ripley = "antipatterns"
+sistema = []
+estado = "activo"
+
+[[repo]]
+nombre = "kaneda"
+url = "https://github.com/INGCOM-UNRN-P1/kaneda"
+tipo = "cli"
+paquete = "kaneda"
+ejecutables = ["kaneda"]
+perfiles = ["estudiante", "analisis"]
+plugin_ripley = "security"
+sistema = []
+estado = "activo"
+
+[[repo]]
+nombre = "nostromo"
+url = "https://github.com/INGCOM-UNRN-P1/nostromo"
+tipo = "cli"
+paquete = "nostromo"
+ejecutables = ["nostromo"]
+perfiles = ["estudiante", "analisis"]
+plugin_ripley = "sandbox"
+sistema = ["bwrap"]
+estado = "activo"
+
+[[repo]]
+nombre = "ripley"
+url = "https://github.com/INGCOM-UNRN-P1/ripley"
+tipo = "cli"
+paquete = "ripley"
+ejecutables = ["ripley", "ripley-check"]
+perfiles = ["estudiante", "analisis", "docente"]
+sistema = ["gcc"]
+estado = "activo"
+
+# ─────────────────────────── Satélites de análisis ───────────────────────────
+
+[[repo]]
+nombre = "brett"
+url = "https://github.com/INGCOM-UNRN-P1/brett"
+tipo = "cli"
+paquete = "brett"
+ejecutables = ["brett"]
+perfiles = ["analisis"]
+plugin_ripley = "padding"
+sistema = []
+estado = "activo"
+
+[[repo]]
+nombre = "callahan"
+url = "https://github.com/INGCOM-UNRN-P1/callahan"
+tipo = "cli"
+paquete = "callahan"
+ejecutables = ["callahan"]
+perfiles = ["analisis"]
+plugin_ripley = "formal_contracts"
+sistema = ["frama-c"]
+estado = "activo"
+
+[[repo]]
+nombre = "corbel"
+url = "https://github.com/INGCOM-UNRN-P1/corbel"
+tipo = "cli"
+paquete = "corbel"
+ejecutables = ["corbel"]
+perfiles = ["analisis"]
+plugin_ripley = "documentation"
+sistema = []
+estado = "activo"
+
+[[repo]]
+nombre = "crowe"
+url = "https://github.com/INGCOM-UNRN-P1/crowe"
+tipo = "cli"
+paquete = "crowe"
+ejecutables = ["crowe"]
+perfiles = ["analisis"]
+plugin_ripley = "portability"
+sistema = []
+estado = "activo"
+
+[[repo]]
+nombre = "dietrich"
+url = "https://github.com/INGCOM-UNRN-P1/dietrich"
+tipo = "cli"
+paquete = "dietrich"
+ejecutables = ["dietrich"]
+perfiles = ["analisis"]
+plugin_ripley = "mcdc_coverage"
+sistema = ["gcc"]
+estado = "activo"
+
+[[repo]]
+nombre = "drake"
+url = "https://github.com/INGCOM-UNRN-P1/drake"
+tipo = "cli"
+paquete = "drake"
+ejecutables = ["drake"]
+perfiles = ["analisis"]
+plugin_ripley = "fuzzing"
+sistema = ["gcc"]
+estado = "activo"
+
+[[repo]]
+nombre = "esper"
+url = "https://github.com/INGCOM-UNRN-P1/esper"
+tipo = "cli"
+paquete = "esper"
+ejecutables = ["esper"]
+perfiles = ["analisis"]
+plugin_ripley = "gcc_explainer"
+sistema = ["gcc"]
+estado = "deprecado"
+
+[[repo]]
+nombre = "ferro"
+url = "https://github.com/INGCOM-UNRN-P1/ferro"
+tipo = "cli"
+paquete = "ferro"
+ejecutables = ["ferro"]
+perfiles = ["analisis"]
+plugin_ripley = "hardware_profiler"
+sistema = ["gcc", "valgrind"]
+estado = "activo"
+
+[[repo]]
+nombre = "giger"
+url = "https://github.com/INGCOM-UNRN-P1/giger"
+tipo = "cli"
+paquete = "giger"
+ejecutables = ["giger"]
+perfiles = ["analisis"]
+plugin_ripley = "callgraph"
+sistema = []
+estado = "activo"
+
+[[repo]]
+nombre = "holden"
+url = "https://github.com/INGCOM-UNRN-P1/holden"
+tipo = "cli"
+paquete = "holden"
+ejecutables = ["holden"]
+perfiles = ["analisis"]
+plugin_ripley = "mocks"
+sistema = ["gcc"]
+estado = "activo"
+
+[[repo]]
+nombre = "kane"
+url = "https://github.com/INGCOM-UNRN-P1/kane"
+tipo = "cli"
+paquete = "kane"
+ejecutables = ["kane"]
+perfiles = ["analisis"]
+plugin_ripley = "binary_io"
+sistema = []
+estado = "activo"
+
+[[repo]]
+nombre = "motoko"
+url = "https://github.com/INGCOM-UNRN-P1/motoko"
+tipo = "cli"
+paquete = "motoko"
+ejecutables = ["motoko"]
+perfiles = ["analisis"]
+plugin_ripley = "tda_encapsulation"
+sistema = []
+estado = "activo"
+
+[[repo]]
+nombre = "parker"
+url = "https://github.com/INGCOM-UNRN-P1/parker"
+tipo = "cli"
+paquete = "parker"
+ejecutables = ["parker"]
+perfiles = ["analisis"]
+plugin_ripley = "abi_audit"
+sistema = ["gcc"]
+estado = "activo"
+
+[[repo]]
+nombre = "rachel"
+url = "https://github.com/INGCOM-UNRN-P1/rachel"
+tipo = "cli"
+paquete = "rachel"
+ejecutables = ["rachel"]
+perfiles = ["analisis"]
+plugin_ripley = "rachel"
+sistema = ["gcc"]
+estado = "activo"
+
+[[repo]]
+nombre = "sebastian"
+url = "https://github.com/INGCOM-UNRN-P1/sebastian"
+tipo = "cli"
+paquete = "sebastian"
+ejecutables = ["sebastian"]
+perfiles = ["analisis"]
+plugin_ripley = "sebastian"
+sistema = ["gcc"]
+estado = "activo"
+
+[[repo]]
+nombre = "tetsuo"
+url = "https://github.com/INGCOM-UNRN-P1/tetsuo"
+tipo = "cli"
+paquete = "tetsuo"
+ejecutables = ["tetsuo"]
+perfiles = ["analisis"]
+plugin_ripley = "sanitizer_translator"
+sistema = ["gcc"]
+estado = "activo"
+
+[[repo]]
+nombre = "tyrell"
+url = "https://github.com/INGCOM-UNRN-P1/tyrell"
+tipo = "cli"
+paquete = "tyrell"
+ejecutables = ["tyrell"]
+perfiles = ["analisis"]
+plugin_ripley = "dataset_generator"
+sistema = []
+estado = "activo"
+
+[[repo]]
+nombre = "vasquez"
+url = "https://github.com/INGCOM-UNRN-P1/vasquez"
+tipo = "cli"
+paquete = "vasquez"
+ejecutables = ["vasquez"]
+perfiles = ["analisis"]
+plugin_ripley = "fault_injection"
+sistema = ["gcc"]
+estado = "activo"
+
+[[repo]]
+nombre = "vassili"
+url = "https://github.com/INGCOM-UNRN-P1/vassili"
+tipo = "cli"
+paquete = "vassili"
+ejecutables = ["vassili"]
+perfiles = ["analisis"]
+plugin_ripley = "mutation_testing"
+sistema = ["gcc"]
+estado = "activo"
+
+[[repo]]
+nombre = "weyl"
+url = "https://github.com/INGCOM-UNRN-P1/weyl"
+tipo = "cli"
+paquete = "weyl"
+ejecutables = ["weyl"]
+perfiles = ["analisis", "docente"]
+plugin_ripley = "semantic_diff"
+sistema = []
+estado = "activo"
+
+[[repo]]
+nombre = "wierzbowski"
+url = "https://github.com/INGCOM-UNRN-P1/wierzbowski"
+tipo = "cli"
+paquete = "wierzbowski"
+ejecutables = ["wierzbowski"]
+perfiles = ["analisis"]
+plugin_ripley = "headers_audit"
+sistema = []
+estado = "activo"
+
+[[repo]]
+nombre = "zhora"
+url = "https://github.com/INGCOM-UNRN-P1/zhora"
+tipo = "cli"
+paquete = "zhora"
+ejecutables = ["zhora"]
+perfiles = ["analisis"]
+plugin_ripley = "macro_security"
+sistema = []
+estado = "activo"
+
+# ─────────────────────────── Docencia ───────────────────────────
+
+[[repo]]
+nombre = "dredd"
+url = "https://github.com/INGCOM-UNRN-P1/dredd"
+tipo = "cli"
+paquete = "dredd"
+ejecutables = ["dredd"]
+perfiles = ["docente"]
+sistema = ["gcc", "git", "bwrap"]
+estado = "activo"
+
+[[repo]]
+nombre = "keymaker"
+url = "https://github.com/INGCOM-UNRN-P1/keymaker"
+tipo = "cli"
+paquete = "keymaker"
+ejecutables = ["keymaker"]
+perfiles = ["docente"]
+sistema = []
+estado = "activo"
+
+[[repo]]
+nombre = "uatu-tools"
+url = "https://github.com/INGCOM-UNRN-P1/uatu-tools"
+tipo = "cli"
+paquete = "uatu-tools"
+ejecutables = ["uatu-audit", "uatu-admin"]
+perfiles = ["docente", "aula"]
+sistema = ["git"]
+estado = "activo"
+
+# ─────────────────────────── Contenido ───────────────────────────
+
+[[repo]]
+nombre = "deckard"
+url = "https://github.com/INGCOM-UNRN/deckard"
+tipo = "cli"
+paquete = "deckard"
+ejecutables = ["deckard"]
+perfiles = ["contenido", "docente"]
+sistema = ["gcc", "typst"]
+estado = "activo"
+
+[[repo]]
+nombre = "alucarD"
+url = "https://github.com/INGCOM-UNRN/alucarD"
+tipo = "cli"
+paquete = "generador-examenes"
+ejecutables = ["alucard", "generador-examenes", "gift-linter"]
+perfiles = ["contenido", "docente"]
+sistema = ["typst"]
+estado = "activo"
+
+[[repo]]
+nombre = "idkfa"
+url = "https://github.com/INGCOM-UNRN-P1/idkfa"
+tipo = "cli"
+paquete = "idkfa"
+ejecutables = ["idkfa"]
+perfiles = ["contenido", "docente"]
+sistema = ["gcc"]
+estado = "activo"
+
+[[repo]]
+nombre = "moodle-toolbox"
+url = "https://github.com/INGCOM-UNRN/moodle-toolbox"
+tipo = "cli"
+paquete = "questions"
+ejecutables = ["moodle-toolbox", "questions"]
+extras = ["ai", "ui"]
+perfiles = ["contenido", "docente"]
+sistema = []
+estado = "activo"
+
+[[repo]]
+nombre = "myst-tools"
+url = "https://github.com/martinvilu/mystmd-tools"
+tipo = "cli"
+paquete = "myst-tools"
+ejecutables = ["myst-tools"]
+perfiles = ["contenido"]
+sistema = ["gcc"]
+estado = "activo"
+
+[[repo]]
+nombre = "scorm-tools"
+url = "https://github.com/INGCOM-UNRN/scorm-tools"
+tipo = "cli"
+paquete = "scorm-tools"
+ejecutables = ["scorm-tools"]
+perfiles = ["contenido"]
+sistema = []
+estado = "activo"
+
+[[repo]]
+nombre = "hardboiled"
+url = "https://github.com/INGCOM-UNRN-P1/hardboiled"
+tipo = "cli"
+paquete = "hardboiled"
+ejecutables = ["hardboiled"]
+extras = ["zig"]
+perfiles = ["contenido"]
+sistema = []
+estado = "activo"
+
+[[repo]]
+nombre = "apunte"
+url = "https://github.com/INGCOM-UNRN-P1/INGCOM-UNRN-P1.github.io"
+tipo = "contenido"
+perfiles = ["contenido"]
+estado = "activo"
+
+# ─────────────────────────── Aula ───────────────────────────
+
+[[repo]]
+nombre = "meet-tools"
+url = "https://github.com/martinvilu/meet-tools"
+tipo = "cli"
+paquete = "meet-tools"
+ejecutables = ["meet-tools"]
+perfiles = ["aula"]
+sistema = []
+estado = "activo"
+
+[[repo]]
+nombre = "slide-tools"
+url = "https://github.com/martinvilu/slides-tools"
+tipo = "cli"
+paquete = "slide-tools"
+ejecutables = ["slide-tools"]
+perfiles = ["aula"]
+sistema = []
+estado = "activo"
+
+[[repo]]
+nombre = "yutani"
+url = "https://github.com/INGCOM-UNRN-P1/yutani"
+tipo = "biblioteca"
+paquete = "yutani"
+perfiles = ["estudiante", "analisis", "docente", "contenido", "aula"]
+estado = "sin-publicar"
+
+[[repo]]
+nombre = "cast-tools-common"
+url = "https://github.com/martinvilu/cast-tools-common"
+tipo = "biblioteca"
+paquete = "cast-tools-common"
+perfiles = ["aula"]
+estado = "activo"
+
+[[repo]]
+nombre = "uatu"
+url = "https://github.com/INGCOM-UNRN-P1/uatu"
+tipo = "extension-vscode"
+perfiles = ["aula"]
+estado = "activo"
+
+[[repo]]
+nombre = "uatu-demo"
+url = "https://github.com/INGCOM-UNRN-P1/uatu-demo"
+tipo = "ejemplo"
+perfiles = ["aula"]
+estado = "activo"
+
+[[repo]]
+nombre = "grid"
+url = "https://github.com/INGCOM-UNRN-P1/grid"
+tipo = "extension-vscode"
+perfiles = ["aula"]
+estado = "activo"
+
+[[repo]]
+nombre = "cyberdeck"
+tipo = "especificacion"
+perfiles = ["aula"]
+estado = "especificacion"
+
+# ─────────────────────────── Infraestructura, plantillas y soporte ───────────────────────────
+
+[[repo]]
+nombre = "p1-tools"
+url = "https://github.com/INGCOM-UNRN-P1/toolbox"
+tipo = "documentacion"
+perfiles = ["docente"]
+estado = "activo"
+
+[[repo]]
+nombre = "entorno"
+url = "https://github.com/INGCOM-UNRN-P1/entorno"
+tipo = "entorno"
+perfiles = ["estudiante"]
+estado = "activo"
+
+[[repo]]
+nombre = "plantilla-TP"
+carpeta = "plantillas/plantilla-TP"
+url = "https://github.com/INGCOM-UNRN-P1/plantilla-TP"
+tipo = "plantilla"
+perfiles = ["estudiante"]
+estado = "activo"
+
+[[repo]]
+nombre = "plantilla-final"
+carpeta = "plantillas/plantilla-final"
+url = "https://github.com/INGCOM-UNRN-P1/plantilla-final"
+tipo = "plantilla"
+perfiles = ["estudiante"]
+estado = "activo"
+
+[[repo]]
+nombre = "plantilla-libreria"
+carpeta = "plantillas/plantilla-libreria"
+url = "https://github.com/INGCOM-UNRN-P1/plantilla-libreria"
+tipo = "plantilla"
+perfiles = ["estudiante"]
+estado = "activo"
+
+[[repo]]
+nombre = "treadstone"
+carpeta = "librerias/treadstone"
+url = "https://github.com/INGCOM-UNRN-P1/treadstone"
+tipo = "libreria-c"
+perfiles = ["estudiante"]
+estado = "activo"
+
+[[repo]]
+nombre = "bitmaps"
+carpeta = "librerias/bitmaps"
+url = "https://github.com/INGCOM-UNRN-P1/bitmaps"
+tipo = "libreria-c"
+perfiles = ["estudiante"]
+estado = "activo"
+
+[[repo]]
+nombre = "sonido"
+carpeta = "librerias/sonido"
+url = "https://github.com/INGCOM-UNRN-P1/sonido"
+tipo = "libreria-c"
+perfiles = ["estudiante"]
+estado = "activo"
+
+[[repo]]
+nombre = "gestion"
+url = "https://github.com/martinvilu/gestion"
+tipo = "apps-script"
+perfiles = ["docente"]
+estado = "activo"
+
+[[repo]]
+nombre = "actividad-estudiante-ejemplo"
+tipo = "ejemplo"
+perfiles = ["estudiante"]
+estado = "activo"
+
+[[repo]]
+nombre = "smoke_scorm"
+tipo = "ejemplo"
+perfiles = ["contenido"]
+estado = "activo"
+
+[[repo]]
+nombre = "puppetmaster"
+url = "https://github.com/martinvilu/puppetmaster"
+tipo = "android"
+perfiles = []
+estado = "ajeno"

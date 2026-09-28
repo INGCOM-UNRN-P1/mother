@@ -1,0 +1,84 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Test (${{ matrix.os }}, Python ${{ matrix.python-version }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, windows-2025, macos-15]
+        python-version: ["3.11", "3.12"]
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Instalar uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Ejecutar suite de pruebas
+        run: uv run pytest -q
+
+  calidad:
+    name: Errores de Python y tipos
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Instalar uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.12"
+
+      - name: ruff
+        run: uvx ruff check --select E9,F63,F7,F82,F401,B .
+
+      - name: mypy
+        run: uv run --with mypy mypy src
+
+  zipapp:
+    name: Construir mother.pyz (y publicarlo en los tags v*)
+    runs-on: ubuntu-24.04
+    needs: [test, calidad]
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/checkout@v7
+        with:
+          repository: INGCOM-UNRN-P1/p1-tools
+          path: p1-tools
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Construir con el manifiesto vigente de p1-tools
+        run: python3 scripts/construir_zipapp.py --manifiesto p1-tools/ecosistema.toml
+
+      - name: Probar el zipapp
+        run: |
+          python3 dist/mother.pyz --version
+          python3 dist/mother.pyz --sin-red listar
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: mother.pyz
+          path: dist/mother.pyz
+
+      - name: Publicar el release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/mother.pyz
