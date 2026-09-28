@@ -241,6 +241,19 @@ def cmd_sistema(args: argparse.Namespace, manifiesto: Manifiesto) -> int:
 
 # ── entrada ──────────────────────────────────────────────────────────────────────────────
 
+def _salida_en_utf8() -> None:
+    """Escribe en UTF-8 aunque la salida esté redirigida.
+
+    En Windows, con la salida redirigida (a un archivo, a otro programa o en un runner de CI),
+    Python escribe con la página de códigos (cp1252) y los ✓, ✗ y ─ de las tablas hacían fallar a
+    mother con UnicodeEncodeError. La consola de Windows ya escribe en UTF-8 (PEP 528).
+    """
+    for flujo in (sys.stdout, sys.stderr):
+        codificacion = (getattr(flujo, "encoding", None) or "").lower().replace("-", "").replace("_", "")
+        if codificacion != "utf8" and hasattr(flujo, "reconfigure"):
+            flujo.reconfigure(encoding="utf-8")
+
+
 def construir_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="mother",
@@ -294,6 +307,7 @@ COMANDOS = {"listar": cmd_listar, "instalar": cmd_instalar, "actualizar": cmd_ac
 
 
 def main(argv: list[str] | None = None) -> int:
+    _salida_en_utf8()
     parser = construir_parser()
     args = parser.parse_args(argv)
     if args.comando is None:

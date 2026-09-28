@@ -229,6 +229,26 @@ def test_sistema(ruta_manifiesto, capsys):
     assert "✓ sh" in capsys.readouterr().out
 
 
+# ── salida redirigida en Windows ─────────────────────────────────────────────────────────
+
+# Con la salida redirigida (archivo, otro programa, runner de CI), Python en Windows escribe
+# con la página de códigos; PYTHONIOENCODING=cp1252 reproduce ese caso en cualquier sistema.
+SALIDA_WINDOWS = dict(os.environ, PYTHONIOENCODING="cp1252")
+
+
+@pytest.mark.parametrize("args, simbolo", [
+    (["listar"], "─"),
+    (["sistema", "--perfil", "estudiante"], " sh"),
+    (["doctor", "--perfil", "estudiante"], "─"),
+])
+def test_salida_redirigida_en_windows(ruta_manifiesto, args, simbolo):
+    proc = subprocess.run([sys.executable, "-m", "mother", "--manifiesto", str(ruta_manifiesto), *args],
+                          capture_output=True, env=SALIDA_WINDOWS, timeout=120)
+    error = proc.stderr.decode("utf-8", "replace")
+    assert "Traceback" not in error and proc.returncode in (0, 1), error
+    assert simbolo in proc.stdout.decode("utf-8")
+
+
 # ── contrato de mother ───────────────────────────────────────────────────────────────────
 
 @pytest.mark.parametrize("opcion", ["-h", "--help", "-v", "--version"])
@@ -247,11 +267,16 @@ def test_sin_comando_muestra_la_ayuda(capsys):
 def test_zipapp(tmp_path):
     raiz = Path(__file__).resolve().parents[1]
     destino = tmp_path / "mother.pyz"
-    subprocess.run([sys.executable, str(raiz / "scripts" / "construir_zipapp.py"), "--salida", str(destino)],
-                   check=True, capture_output=True)
+    construccion = subprocess.run([sys.executable, str(raiz / "scripts" / "construir_zipapp.py"), "--salida",
+                                   str(destino)], capture_output=True, env=SALIDA_WINDOWS)
+    assert construccion.returncode == 0, construccion.stderr.decode("utf-8", "replace")
     salida = subprocess.run([sys.executable, str(destino), "--version"], capture_output=True, text=True)
     assert salida.returncode == 0 and salida.stdout.startswith("mother ")
     listado = subprocess.run([sys.executable, str(destino), "--sin-red", "listar", "--json"],
                              capture_output=True, text=True, env=dict(os.environ, XDG_CACHE_HOME=str(tmp_path)))
     assert listado.returncode == 0, listado.stderr
     assert any(r["nombre"] == "ripley" for r in json.loads(listado.stdout))
+    tabla = subprocess.run([sys.executable, str(destino), "--sin-red", "listar"], capture_output=True,
+                           env=dict(SALIDA_WINDOWS, XDG_CACHE_HOME=str(tmp_path)))
+    assert tabla.returncode == 0, tabla.stderr.decode("utf-8", "replace")
+    assert "ripley" in tabla.stdout.decode("utf-8")

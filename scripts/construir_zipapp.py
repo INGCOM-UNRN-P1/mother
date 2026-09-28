@@ -22,6 +22,9 @@ PAQUETE = RAIZ / "src" / "mother"
 
 
 def main(argv: list[str]) -> int:
+    # En Windows, con la salida redirigida, print escribe en cp1252 y no puede con «✓».
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(encoding="utf-8")
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--manifiesto", type=Path, help="ecosistema.toml a incluir (por defecto, el actual)")
     parser.add_argument("--salida", type=Path, default=RAIZ / "dist" / "mother.pyz")
