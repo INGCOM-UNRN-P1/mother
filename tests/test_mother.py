@@ -114,7 +114,6 @@ def test_sin_publicar_no_es_instalable(ruta_manifiesto):
 
 @pytest.mark.parametrize("texto, mensaje", [
     ('[perfiles]\n[[repo]]\nnombre = "x"\ntipo = "cli"\nestado = "activo"\nurl = "u"', "necesita `paquete`"),
-    ('[perfiles]\n[[repo]]\nnombre = "x"\ntipo = "rara"\nestado = "activo"', "tipo desconocido"),
     ('[perfiles]\n[[repo]]\nnombre = "x"\ntipo = "contenido"\nestado = "activo"\nperfiles = ["p"]', "perfil desconocido"),
     ('[perfiles]\n[[repo]]\nnombre = "x"\ntipo = "contenido"\nestado = "activo"\ncampo_raro = 1', "campo_raro"),
     ("esto no es toml = = =", "no es un TOML válido"),
@@ -122,6 +121,15 @@ def test_sin_publicar_no_es_instalable(ruta_manifiesto):
 def test_manifiesto_invalido(texto, mensaje):
     with pytest.raises(ManifiestoInvalido, match=mensaje):
         interpretar(texto, "prueba")
+
+
+def test_tipos_y_estados_nuevos_no_rompen():
+    """Un manifiesto más nuevo que mother (tipos o estados que no conoce) se sigue leyendo."""
+    manifiesto = interpretar(
+        '[perfiles]\ndocente = "d"\n\n[[repo]]\nnombre = "sulaco"\ntipo = "workflows"\n'
+        'estado = "futuro"\nperfiles = ["docente"]\n', "prueba")
+    assert [r.nombre for r in manifiesto.repos] == ["sulaco"]
+    assert manifiesto.seleccionar(["docente"]) == []
 
 
 def test_perfil_desconocido(ruta_manifiesto, capsys):

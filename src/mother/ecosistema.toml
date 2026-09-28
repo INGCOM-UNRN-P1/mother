@@ -11,7 +11,7 @@
 #                  varios nombres de paquete están tomados en PyPI por terceros)
 #   tipo           cli | biblioteca | extension-vscode | apps-script | contenido
 #                  | plantilla | libreria-c | ejemplo | entorno | documentacion
-#                  | android | especificacion
+#                  | android | especificacion | workflows | datos
 #   paquete        nombre del paquete Python (tipo cli/biblioteca)
 #   ejecutables    comandos que instala
 #   extras         extras a instalar junto con el paquete
@@ -496,6 +496,29 @@ ejecutables = ["slide-tools"]
 perfiles = ["aula"]
 sistema = []
 estado = "activo"
+
+[[repo]]
+nombre = "mother"
+url = "https://github.com/INGCOM-UNRN-P1/mother"
+tipo = "cli"
+paquete = "mother"
+ejecutables = ["mother"]
+perfiles = ["estudiante", "analisis", "docente", "contenido", "aula"]
+estado = "sin-publicar"
+
+[[repo]]
+nombre = "sulaco"
+url = "https://github.com/INGCOM-UNRN-P1/sulaco"
+tipo = "workflows"
+perfiles = ["docente"]
+estado = "sin-publicar"
+
+[[repo]]
+nombre = "corpus"
+url = "https://github.com/INGCOM-UNRN-P1/corpus"
+tipo = "datos"
+perfiles = ["docente"]
+estado = "sin-publicar"
 
 [[repo]]
 nombre = "yutani"

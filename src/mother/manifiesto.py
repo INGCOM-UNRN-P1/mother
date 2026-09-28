@@ -20,9 +20,6 @@ from pathlib import Path
 
 URL_MANIFIESTO = "https://raw.githubusercontent.com/INGCOM-UNRN-P1/p1-tools/main/ecosistema.toml"
 VARIABLE_MANIFIESTO = "MOTHER_MANIFIESTO"
-TIPOS = {"cli", "biblioteca", "extension-vscode", "apps-script", "contenido", "plantilla",
-         "libreria-c", "ejemplo", "entorno", "documentacion", "android", "especificacion"}
-ESTADOS = {"activo", "deprecado", "especificacion", "ajeno", "sin-publicar"}
 
 
 class ManifiestoInvalido(Exception):
@@ -95,10 +92,8 @@ def interpretar(texto: str, origen: str) -> Manifiesto:
         if repo.nombre in nombres:
             errores.append(f"{repo.nombre}: nombre repetido")
         nombres.add(repo.nombre)
-        if repo.tipo not in TIPOS:
-            errores.append(f"{repo.nombre}: tipo desconocido «{repo.tipo}»")
-        if repo.estado not in ESTADOS:
-            errores.append(f"{repo.nombre}: estado desconocido «{repo.estado}»")
+        # Tipos y estados nuevos del manifiesto no rompen a una versión vieja de mother:
+        # esos repos simplemente no son instalables (`instalable` exige cli y activo).
         errores += [f"{repo.nombre}: perfil desconocido «{p}»" for p in repo.perfiles if p not in perfiles]
         if repo.tipo == "cli" and not (repo.paquete and repo.ejecutables):
             errores.append(f"{repo.nombre}: una herramienta necesita `paquete` y `ejecutables`")
