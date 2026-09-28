@@ -88,9 +88,17 @@ def herramientas(tmp_path: Path, monkeypatch) -> Path:
     bin_dir.mkdir()
     for nombre, cuerpo in (("falsa", HERRAMIENTA.replace("OK", "True")),
                            ("rota", HERRAMIENTA.replace("OK", "False").replace('(["-h"], ["--help"])', '(["--help"],)'))):
-        ruta = bin_dir / nombre
-        ruta.write_text(f"#!{sys.executable}\nimport sys, json\nargs = sys.argv[1:]\n{cuerpo}\n", encoding="utf-8")
-        ruta.chmod(ruta.stat().st_mode | stat.S_IXUSR)
+        codigo = f"import sys, json\nargs = sys.argv[1:]\n{cuerpo}\n"
+        if os.name == "nt":
+            # Windows no ejecuta scripts con shebang ni los encuentra sin extensión: un lanzador .cmd
+            # (que shutil.which encuentra por PATHEXT) llama al intérprete con el script.
+            (bin_dir / f"{nombre}-herramienta.py").write_text(codigo, encoding="utf-8")
+            (bin_dir / f"{nombre}.cmd").write_text(
+                f'@"{sys.executable}" "%~dp0{nombre}-herramienta.py" %*\n@exit /b %ERRORLEVEL%\n', encoding="utf-8")
+        else:
+            ruta = bin_dir / nombre
+            ruta.write_text(f"#!{sys.executable}\n{codigo}", encoding="utf-8")
+            ruta.chmod(ruta.stat().st_mode | stat.S_IXUSR)
     monkeypatch.setenv("PATH", f"{bin_dir}{os.pathsep}{os.environ['PATH']}")
     return bin_dir
 
@@ -184,7 +192,8 @@ def test_instalar_simulado(ruta_manifiesto, capsys):
 
 def test_instalar_local_y_forzado(ruta_manifiesto, capsys):
     _mother(ruta_manifiesto, "instalar", "--perfil", "estudiante", "--local", "/raiz", "--forzar", "--simular")
-    assert capsys.readouterr().out.strip() == "$ uv tool install --force --reinstall-package falsa /raiz/falsa"
+    ruta = Path("/raiz") / "falsa"  # con el separador del sistema: \raiz\falsa en Windows
+    assert capsys.readouterr().out.strip() == f"$ uv tool install --force --reinstall-package falsa {ruta}"
 
 
 # ── doctor, versiones, autoprueba, sistema ───────────────────────────────────────────────

@@ -41,9 +41,13 @@ def entorno_herramientas() -> dict[str, str]:
 
 
 def correr(args: list[str], timeout: float = 120.0) -> Resultado:
+    # Se ejecuta la ruta que encontró shutil.which, el mismo criterio con que se decide si una
+    # herramienta está instalada. En Windows, CreateProcess solo prueba la extensión .exe (no ve los
+    # lanzadores .cmd/.bat que sí encuentra which) y busca en la carpeta actual antes que en el PATH.
+    ejecutable = shutil.which(args[0]) or args[0]
     try:
-        proc = subprocess.run(args, capture_output=True, encoding="utf-8", errors="replace", timeout=timeout,
-                              env=entorno_herramientas(), stdin=subprocess.DEVNULL)
+        proc = subprocess.run([ejecutable, *args[1:]], capture_output=True, encoding="utf-8", errors="replace",
+                              timeout=timeout, env=entorno_herramientas(), stdin=subprocess.DEVNULL)
     except FileNotFoundError:
         return Resultado(127, "", f"no se encontró {args[0]}")
     except subprocess.TimeoutExpired:
