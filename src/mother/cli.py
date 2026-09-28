@@ -21,7 +21,6 @@ from mother import __version__
 from mother.manifiesto import Manifiesto, ManifiestoInvalido, Repo, cargar
 
 SCHEMA_VERSION = "1.0.0"
-ENTORNO = dict(os.environ, NO_COLOR="1", TERM="dumb", COLUMNS="200")
 URL_UV = "https://docs.astral.sh/uv/getting-started/installation/"
 
 
@@ -32,10 +31,19 @@ class Resultado:
     error: str
 
 
+def entorno_herramientas() -> dict[str, str]:
+    """Entorno para ejecutar las herramientas: salida sin colores y en UTF-8.
+
+    PYTHONIOENCODING: con la salida capturada, en Windows las herramientas escribirían en cp1252 y
+    fallarían con UnicodeEncodeError ante un ✓ o un → (p. ej., en su `doctor --json`).
+    """
+    return dict(os.environ, NO_COLOR="1", TERM="dumb", COLUMNS="200", PYTHONIOENCODING="utf-8")
+
+
 def correr(args: list[str], timeout: float = 120.0) -> Resultado:
     try:
-        proc = subprocess.run(args, capture_output=True, text=True, timeout=timeout, env=ENTORNO,
-                              stdin=subprocess.DEVNULL)
+        proc = subprocess.run(args, capture_output=True, encoding="utf-8", errors="replace", timeout=timeout,
+                              env=entorno_herramientas(), stdin=subprocess.DEVNULL)
     except FileNotFoundError:
         return Resultado(127, "", f"no se encontró {args[0]}")
     except subprocess.TimeoutExpired:

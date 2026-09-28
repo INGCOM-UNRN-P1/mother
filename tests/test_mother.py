@@ -66,7 +66,8 @@ elif args in (["--version"], ["-v"]):
     print("falsa 2.0.0")
 elif args == ["doctor", "--json"]:
     print(json.dumps({"schema_version": "1.0.0", "herramienta": "falsa", "ok": OK,
-                      "chequeos": [{"nombre": "gcc", "requerido": True, "ok": OK}]}))
+                      "chequeos": [{"nombre": "gcc", "requerido": True, "ok": OK, "detalle": "✓ → compilación"}]},
+                     ensure_ascii=False))
     sys.exit(0 if OK else 1)
 else:
     sys.exit(2)
@@ -91,7 +92,6 @@ def herramientas(tmp_path: Path, monkeypatch) -> Path:
         ruta.write_text(f"#!{sys.executable}\nimport sys, json\nargs = sys.argv[1:]\n{cuerpo}\n", encoding="utf-8")
         ruta.chmod(ruta.stat().st_mode | stat.S_IXUSR)
     monkeypatch.setenv("PATH", f"{bin_dir}{os.pathsep}{os.environ['PATH']}")
-    monkeypatch.setattr(cli, "ENTORNO", dict(os.environ))
     return bin_dir
 
 
@@ -197,6 +197,15 @@ def test_doctor_agregado(ruta_manifiesto, herramientas, capsys):
     assert por_nombre["falsa"]["ok"] and por_nombre["falsa"]["requerido"]
     assert datos["herramientas"]["falsa"]["herramienta"] == "falsa"
     assert codigo == (0 if datos["ok"] else 1)
+
+
+def test_doctor_lee_en_utf8_la_salida_de_las_herramientas(ruta_manifiesto, herramientas, capsys, monkeypatch):
+    """Con la salida capturada, en Windows las herramientas escribirían en cp1252 y el ✓ de su
+    `doctor --json` las haría fallar; mother les pide UTF-8 y lo lee así."""
+    monkeypatch.setenv("PYTHONIOENCODING", "cp1252")  # lo que heredan en Windows
+    _mother(ruta_manifiesto, "doctor", "--perfil", "estudiante", "--json")
+    datos = json.loads(capsys.readouterr().out)
+    assert datos["herramientas"]["falsa"]["chequeos"][0]["detalle"] == "✓ → compilación"
 
 
 def test_doctor_falla_si_una_herramienta_requerida_falla(ruta_manifiesto, herramientas, capsys):
