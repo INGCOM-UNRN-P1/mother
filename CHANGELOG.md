@@ -3,6 +3,12 @@
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/);
 versiones según [SemVer](https://semver.org/lang/es/).
 
+## [0.1.1] - 2026-09-28
+
+### Corregido
+
+- **manifiesto**: no rechazar tipos ni estados que esta versión no conoce (`8c23c48`)
+
 ## [0.1.0] - 2026-09-28
 
 ### Agregado
