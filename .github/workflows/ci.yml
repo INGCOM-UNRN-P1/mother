@@ -55,9 +55,12 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
+      # p1-tools se publica como INGCOM-UNRN-P1/toolbox. Mientras sea privado, el GITHUB_TOKEN de
+      # este repo no alcanza: hace falta el secret TOOLBOX_TOKEN (token de solo lectura de toolbox).
       - uses: actions/checkout@v7
         with:
-          repository: INGCOM-UNRN-P1/p1-tools
+          repository: INGCOM-UNRN-P1/toolbox
+          token: ${{ secrets.TOOLBOX_TOKEN || github.token }}
           path: p1-tools
 
       - uses: actions/setup-python@v6

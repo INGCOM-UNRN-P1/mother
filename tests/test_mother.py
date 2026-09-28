@@ -9,6 +9,7 @@ import subprocess
 import sys
 import textwrap
 import urllib.error
+from importlib import resources
 from pathlib import Path
 
 import pytest
@@ -169,6 +170,14 @@ def test_descarga_y_guarda_en_cache(tmp_path, monkeypatch):
     monkeypatch.setattr(manifiesto, "_descargar", lambda url, timeout=10.0: textwrap.dedent(MANIFIESTO))
     assert cargar().origen == manifiesto.URL_MANIFIESTO
     assert (tmp_path / "cache" / "mother" / "ecosistema.toml").is_file()
+
+
+def test_la_url_del_manifiesto_es_la_del_repo_de_p1_tools():
+    """El manifiesto se descarga del repo en que se publica p1-tools (su `url` en el propio manifiesto)."""
+    incluida = (resources.files("mother") / "ecosistema.toml").read_text(encoding="utf-8")
+    p1_tools = next(r for r in interpretar(incluida, "copia incluida").repos if r.nombre == "p1-tools")
+    repo = p1_tools.url.removeprefix("https://github.com/")
+    assert manifiesto.URL_MANIFIESTO == f"https://raw.githubusercontent.com/{repo}/main/ecosistema.toml"
 
 
 def test_variable_de_entorno(ruta_manifiesto, monkeypatch):

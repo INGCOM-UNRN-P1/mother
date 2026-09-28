@@ -5,7 +5,7 @@ _(MU/TH/UR 6000, la computadora de la Nostromo.)_
 Instala, actualiza y diagnostica las herramientas del ecosistema **siempre
 desde git** (varios nombres de paquete están tomados en PyPI por proyectos
 ajenos). Lee el manifiesto único `ecosistema.toml` de
-[p1-tools](https://github.com/INGCOM-UNRN-P1/p1-tools) y reemplaza a
+[p1-tools](https://github.com/INGCOM-UNRN-P1/toolbox) y reemplaza a
 `clone_repos.sh`, `install_tools.sh` y `health_check.sh`.
 
 No tiene dependencias: solo necesita Python ≥ 3.11 y

@@ -18,7 +18,8 @@ from dataclasses import dataclass, field
 from importlib import resources
 from pathlib import Path
 
-URL_MANIFIESTO = "https://raw.githubusercontent.com/INGCOM-UNRN-P1/p1-tools/main/ecosistema.toml"
+# p1-tools se publica en GitHub como INGCOM-UNRN-P1/toolbox (el `url` de su entrada en el manifiesto).
+URL_MANIFIESTO = "https://raw.githubusercontent.com/INGCOM-UNRN-P1/toolbox/main/ecosistema.toml"
 VARIABLE_MANIFIESTO = "MOTHER_MANIFIESTO"
 
 
