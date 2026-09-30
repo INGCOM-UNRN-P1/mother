@@ -53,6 +53,37 @@ uv run pytest -q
 python3 scripts/construir_zipapp.py --manifiesto ../p1-tools/ecosistema.toml   # dist/mother.pyz
 ```
 
+<!-- p1:referencia:inicio — generado por p1-tools/scripts/readme_generado.py: no editar a mano -->
+
+## Referencia rápida
+
+### Requisitos
+
+- Python ≥ 3.11 y [uv](https://docs.astral.sh/uv/getting-started/installation/).
+
+### Opciones de `mother`
+
+| Opción | Descripción |
+|:--|:--|
+| `--manifiesto` | ruta o URL de ecosistema.toml (por defecto, el publicado en p1-tools) |
+| `--sin-red` | no descargar el manifiesto: usar la caché o la copia incluida |
+
+### Comandos
+
+| Comando | Descripción |
+|:--|:--|
+| `mother listar` | herramientas del manifiesto y si están instaladas |
+| `mother instalar` | instala las herramientas de un perfil desde git |
+| `mother actualizar` | actualiza las herramientas instaladas |
+| `mother doctor` | diagnóstico agregado: mother más el doctor de cada herramienta |
+| `mother versiones` | versión instalada de cada herramienta |
+| `mother autoprueba` | verifica el contrato de línea de comandos de lo instalado |
+| `mother sistema` | programas del sistema que necesita un perfil (gcc, gdb…) |
+
+Ayuda de cada comando: `mother <comando> -h`.
+
+<!-- p1:referencia:fin -->
+
 ## Licencia
 
 GPL-3.0-or-later (ver `LICENSE`).
