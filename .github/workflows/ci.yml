@@ -57,7 +57,9 @@ jobs:
 
       # p1-tools se publica como INGCOM-UNRN-P1/toolbox. Mientras sea privado, el GITHUB_TOKEN de
       # este repo no alcanza: hace falta el secret TOOLBOX_TOKEN (token de solo lectura de toolbox).
+      # Si no está disponible, se construye con la copia incluida de ecosistema.toml.
       - uses: actions/checkout@v7
+        continue-on-error: true
         with:
           repository: INGCOM-UNRN-P1/toolbox
           token: ${{ secrets.TOOLBOX_TOKEN || github.token }}
@@ -67,8 +69,13 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Construir con el manifiesto vigente de p1-tools
-        run: python3 scripts/construir_zipapp.py --manifiesto p1-tools/ecosistema.toml
+      - name: Construir el zipapp
+        run: |
+          if [ -f p1-tools/ecosistema.toml ]; then
+            python3 scripts/construir_zipapp.py --manifiesto p1-tools/ecosistema.toml
+          else
+            python3 scripts/construir_zipapp.py
+          fi
 
       - name: Probar el zipapp
         run: |
