@@ -266,7 +266,61 @@ def _salida_en_utf8() -> None:
             flujo.reconfigure(encoding="utf-8")
 
 
+# Textos de argparse en español (LINEAMIENTOS §4.2, N-ECO-14). mother no puede depender de yutani
+# (solo biblioteca estándar), así que la tabla vive acá: argparse busca cada texto con
+# `_()`/`ngettext()` al usarlo y traducir_argparse() reemplaza esas funciones. Un texto que no está
+# (de otra versión de Python) queda en inglés en lugar de fallar. Misma redacción que yutani.
+TEXTOS_ARGPARSE = {
+    "usage: ": "uso: ",
+    "positional arguments": "argumentos",
+    "options": "opciones",
+    "subcommands": "subcomandos",
+    "show this help message and exit": "muestra esta ayuda y sale",
+    "show program's version number and exit": "muestra la versión y sale",
+    " (default: %(default)s)": " (por defecto: %(default)s)",
+    "argument %(argument_name)s: %(message)s": "argumento %(argument_name)s: %(message)s",
+    "the following arguments are required: %s": "faltan los argumentos obligatorios: %s",
+    "one of the arguments %s is required": "falta uno de estos argumentos: %s",
+    "unrecognized arguments: %s": "argumentos no reconocidos: %s",
+    "not allowed with argument %s": "no se puede usar junto con %s",
+    "ambiguous option: %(option)s could match %(matches)s": "opción ambigua: %(option)s puede ser %(matches)s",
+    "expected one argument": "necesita un valor",
+    "expected at most one argument": "admite como máximo un valor",
+    "expected at least one argument": "necesita al menos un valor",
+    "ignored explicit argument %r": "no lleva valor: %r",
+    "invalid %(type)s value: %(value)r": "valor inválido (%(type)s): %(value)r",
+    "invalid choice: %(value)r (choose from %(choices)s)": "%(value)r no es ninguna de estas opciones: %(choices)s",
+    "can't open '%(filename)s': %(error)s": "no se puede abrir '%(filename)s': %(error)s",
+    "argument '%(argument_name)s' is deprecated": "el argumento '%(argument_name)s' está obsoleto",
+    "option '%(option)s' is deprecated": "la opción '%(option)s' está obsoleta",
+    "command '%(parser_name)s' is deprecated": "el comando '%(parser_name)s' está obsoleto",
+    "%(prog)s: warning: %(message)s\n": "%(prog)s: aviso: %(message)s\n",
+}
+PLURALES_ARGPARSE = {
+    ("expected %s argument", "expected %s arguments"): ("necesita %s valor", "necesita %s valores"),
+}
+
+
+def _texto_argparse(mensaje: str) -> str:
+    return TEXTOS_ARGPARSE.get(mensaje, mensaje)
+
+
+def _plural_argparse(singular: str, plural: str, n: int) -> str:
+    singular, plural = PLURALES_ARGPARSE.get((singular, plural), (singular, plural))
+    return singular if n == 1 else plural
+
+
+def traducir_argparse() -> None:
+    """Pasa al español la ayuda y los errores de argparse (idempotente)."""
+    modulo = vars(argparse)
+    if "_" in modulo:
+        modulo["_"] = _texto_argparse
+    if "ngettext" in modulo:
+        modulo["ngettext"] = _plural_argparse
+
+
 def construir_parser() -> argparse.ArgumentParser:
+    traducir_argparse()
     parser = argparse.ArgumentParser(
         prog="mother",
         description="Instala, actualiza y diagnostica las herramientas del ecosistema de Programación 1 "

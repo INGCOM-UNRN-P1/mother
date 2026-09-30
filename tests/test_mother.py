@@ -291,6 +291,23 @@ def test_sin_comando_muestra_la_ayuda(capsys):
     assert "instalar" in capsys.readouterr().out
 
 
+def test_la_ayuda_y_los_errores_de_uso_estan_en_espanol(capsys):
+    with pytest.raises(SystemExit):
+        cli.main(["--help"])
+    ayuda = capsys.readouterr().out
+    assert ayuda.startswith("uso: mother") and "muestra esta ayuda y sale" in ayuda
+
+    with pytest.raises(SystemExit) as salida:
+        cli.main(["nada"])
+    assert salida.value.code == 2
+    assert "'nada' no es ninguna de estas opciones: listar, " in capsys.readouterr().err
+
+    with pytest.raises(SystemExit) as salida:
+        cli.main(["instalar", "--perfil"])
+    assert salida.value.code == 2
+    assert "argumento --perfil: necesita un valor" in capsys.readouterr().err
+
+
 def test_zipapp(tmp_path):
     raiz = Path(__file__).resolve().parents[1]
     destino = tmp_path / "mother.pyz"
