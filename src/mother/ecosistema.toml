@@ -18,8 +18,11 @@
 #   perfiles       estudiante | analisis | docente | contenido | aula
 #   plugin_ripley  nombre del entry-point `ripley.plugins`, si tiene
 #   sistema        programas del sistema que necesita (para doctor y el CI)
-#   estado         activo | deprecado | especificacion | ajeno | sin-publicar
-#                  (sin-publicar: repo creado localmente que todavía no está en GitHub;
+#   estado         activo | deprecado | retirado | especificacion | ajeno | sin-publicar
+#                  (deprecado: todavía se clona y se instala, pero hay que dejar de usarlo;
+#                  retirado: reemplazado por otra herramienta y con el repo archivado: no se
+#                  clona ni se instala;
+#                  sin-publicar: repo creado localmente que todavía no está en GitHub;
 #                  no se clona ni se instala hasta publicarlo y pasarlo a activo)
 schema_version = 1
 
@@ -199,7 +202,8 @@ ejecutables = ["esper"]
 perfiles = ["analisis"]
 plugin_ripley = "gcc_explainer"
 sistema = ["gcc"]
-estado = "deprecado"
+# Lo reemplaza daedalus (N-ESPER-01): ripley y dredd ya no lo usan; falta archivar el repo.
+estado = "retirado"
 
 [[repo]]
 nombre = "ferro"
@@ -378,7 +382,7 @@ url = "https://github.com/INGCOM-UNRN-P1/dredd"
 tipo = "cli"
 paquete = "dredd"
 ejecutables = ["dredd"]
-extras = ["ecosistema", "guias"]
+extras = ["ecosistema"]
 perfiles = ["docente"]
 sistema = ["gcc", "git", "bwrap"]
 estado = "activo"
@@ -568,7 +572,9 @@ nombre = "grid"
 url = "https://github.com/INGCOM-UNRN-P1/grid"
 tipo = "extension-vscode"
 perfiles = ["aula"]
-estado = "activo"
+# Su bitácora se puede reescribir (N-GRID-01): lo que aportaba (extensiones permitidas y
+# reglas de configuración del editor) está en uatu.
+estado = "deprecado"
 
 [[repo]]
 nombre = "cyberdeck"
