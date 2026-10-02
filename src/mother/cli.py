@@ -151,6 +151,10 @@ def informe_doctor(manifiesto: Manifiesto, perfiles: list[str] | None) -> dict:
     herramientas = {}
     requeridas = {r.nombre for r in manifiesto.seleccionar(perfiles)} if perfiles else set()
     for repo in manifiesto.seleccionar(perfiles):
+        if repo.nombre == "mother":
+            # mother está en el manifiesto (se instala con todos los perfiles): consultar su propio
+            # doctor lo volvía recursivo, cada nivel esperando al siguiente hasta agotar los tiempos.
+            continue
         ejecutable = repo.ejecutables[0]
         if not shutil.which(ejecutable):
             chequeos.append({"nombre": repo.nombre, "requerido": repo.nombre in requeridas, "ok": False,

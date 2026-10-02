@@ -236,6 +236,36 @@ def test_doctor_falla_si_una_herramienta_requerida_falla(ruta_manifiesto, herram
     assert codigo == 1 and datos["ok"] is False
 
 
+def test_doctor_no_se_consulta_a_si_mismo(tmp_path, herramientas, capsys):
+    """mother está en el manifiesto real: su doctor agregado corría `mother doctor --json`, que a su
+    vez volvía a correrlo, y cada nivel esperaba al siguiente hasta agotar los tiempos (en el CI E2E,
+    «doctor --json no devolvió JSON (código 124)» y una veintena de procesos mother huérfanos)."""
+    ruta = tmp_path / "con_mother.toml"
+    ruta.write_text(textwrap.dedent(MANIFIESTO) + textwrap.dedent("""
+        [[repo]]
+        nombre = "mother"
+        url = "https://github.com/INGCOM-UNRN-P1/mother"
+        tipo = "cli"
+        paquete = "mother"
+        ejecutables = ["mother"]
+        perfiles = ["estudiante"]
+        estado = "activo"
+        """), encoding="utf-8")
+    llamado = tmp_path / "mother-fue-llamado"
+    falso = herramientas / ("mother-herramienta.py" if os.name == "nt" else "mother")
+    falso.write_text(f"#!{sys.executable}\nimport pathlib\npathlib.Path({str(llamado)!r}).touch()\n", encoding="utf-8")
+    if os.name == "nt":
+        (herramientas / "mother.cmd").write_text(f'@"{sys.executable}" "%~dp0mother-herramienta.py" %*\n', encoding="utf-8")
+    else:
+        falso.chmod(falso.stat().st_mode | stat.S_IXUSR)
+
+    cli.main(["--manifiesto", str(ruta), "doctor", "--perfil", "estudiante", "--json"])
+    datos = json.loads(capsys.readouterr().out)
+    assert not llamado.exists()
+    assert "mother" not in {c["nombre"] for c in datos["chequeos"]}
+    assert datos["herramientas"].keys() == {"falsa"}
+
+
 def test_versiones(ruta_manifiesto, herramientas, capsys):
     _mother(ruta_manifiesto, "versiones", "--json")
     filas = {f["herramienta"]: f for f in json.loads(capsys.readouterr().out)}
