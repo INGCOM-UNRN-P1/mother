@@ -35,8 +35,26 @@ python3 mother.pyz instalar --perfil estudiante
 | `mother versiones [--perfil P] [--json]` | Versión instalada de cada herramienta frente a la esperada por el manifiesto |
 | `mother autoprueba [--perfil P] [--json]` | Verifica el contrato de línea de comandos (`-h`, `--version`, `doctor --json`) de lo instalado |
 | `mother sistema [--perfil P]` | Programas del sistema que necesita el perfil (gcc, gdb, valgrind…) |
+| `mother fijar CUATRIMESTRE [--perfil P] [--json]` | Imprime la matriz `[cuatrimestres."C"]` con el commit actual de cada repo, para pegar en el manifiesto |
 
 Perfiles: `estudiante`, `analisis`, `docente`, `contenido`, `aula`.
+
+### Versiones fijadas por cuatrimestre
+
+Para que todo el curso use la misma versión de cada herramienta, el manifiesto puede fijarlas por
+cuatrimestre (un tag o un commit por repo) y marcar cuál está vigente:
+
+```toml
+cuatrimestre_vigente = "2026-2"
+
+[cuatrimestres."2026-2"]
+gaff = "v0.3.0"
+hal = "4591509"
+```
+
+`instalar`, `actualizar` y `versiones` usan la matriz del vigente (o la de `--cuatrimestre C`); un
+repo que no figura sigue en su `ref` o en la rama principal. `mother fijar 2026-2` arma el bloque
+con el último commit de cada repo.
 
 ### De dónde sale el manifiesto
 

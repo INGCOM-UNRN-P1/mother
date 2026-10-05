@@ -206,11 +206,36 @@ def cmd_versiones(args: argparse.Namespace, manifiesto: Manifiesto) -> int:
         else:
             instalada = "no instalada"
         filas.append({"herramienta": repo.nombre, "instalada": instalada, "esperada": repo.ref or "rama principal"})
+    cuatrimestre = getattr(args, "cuatrimestre", None) or manifiesto.cuatrimestre_vigente
+    if cuatrimestre and not args.json:
+        print(f"Versiones fijadas para el cuatrimestre {cuatrimestre}.")
     if args.json:
         print(json.dumps(filas, ensure_ascii=False, indent=2))
     else:
         print(_tabla([list(f.values()) for f in filas], ["herramienta", "instalada", "esperada (manifiesto)"]))
     return 0
+
+
+def cmd_fijar(args: argparse.Namespace, manifiesto: Manifiesto) -> int:
+    """Imprime [cuatrimestres."C"] con el commit actual de la rama principal de cada repo (git
+    ls-remote): se pega en ecosistema.toml y se publica junto con cuatrimestre_vigente."""
+    matriz, sin_dato = {}, []
+    for repo in manifiesto.seleccionar(_perfiles(args)):
+        res = correr(["git", "ls-remote", repo.url, "HEAD"], timeout=30)
+        commit = res.salida.split()[0] if res.rc == 0 and res.salida.strip() else ""
+        if commit:
+            matriz[repo.nombre] = commit
+        else:
+            sin_dato.append(repo.nombre)
+    if args.json:
+        print(json.dumps({"cuatrimestre": args.nombre, "matriz": matriz, "sin_dato": sin_dato}, ensure_ascii=False, indent=2))
+    else:
+        print(f'[cuatrimestres."{args.nombre}"]')
+        for nombre, commit in matriz.items():
+            print(f'{nombre} = "{commit}"')
+        for nombre in sin_dato:
+            print(f"# {nombre}: no se pudo consultar el repositorio", file=sys.stderr)
+    return 1 if sin_dato else 0
 
 
 def contrato(ejecutable: str) -> dict:
@@ -333,6 +358,8 @@ def construir_parser() -> argparse.ArgumentParser:
     parser.add_argument("-v", "--version", action="version", version=f"mother {__version__}")
     parser.add_argument("--manifiesto", help="ruta o URL de ecosistema.toml (por defecto, el publicado en p1-tools)")
     parser.add_argument("--sin-red", action="store_true", help="no descargar el manifiesto: usar la caché o la copia incluida")
+    parser.add_argument("--cuatrimestre", metavar="C",
+                        help="usar las versiones fijadas para este cuatrimestre (por defecto, el vigente del manifiesto)")
     sub = parser.add_subparsers(dest="comando", metavar="COMANDO")
 
     def perfil(p: argparse.ArgumentParser) -> None:
@@ -369,11 +396,16 @@ def construir_parser() -> argparse.ArgumentParser:
 
     p = sub.add_parser("sistema", help="programas del sistema que necesita un perfil (gcc, gdb…)")
     perfil(p)
+
+    p = sub.add_parser("fijar", help="la matriz de versiones de un cuatrimestre con el último commit de cada repo")
+    perfil(p)
+    p.add_argument("nombre", metavar="CUATRIMESTRE", help="por ejemplo 2026-2")
+    p.add_argument("--json", action="store_true")
     return parser
 
 
 COMANDOS = {"listar": cmd_listar, "instalar": cmd_instalar, "actualizar": cmd_actualizar, "doctor": cmd_doctor,
-            "versiones": cmd_versiones, "autoprueba": cmd_autoprueba, "sistema": cmd_sistema}
+            "versiones": cmd_versiones, "autoprueba": cmd_autoprueba, "sistema": cmd_sistema, "fijar": cmd_fijar}
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -385,6 +417,8 @@ def main(argv: list[str] | None = None) -> int:
         return 0
     try:
         manifiesto = cargar(args.manifiesto, usar_red=not args.sin_red)
+        if args.comando != "fijar":
+            manifiesto.aplicar_cuatrimestre(args.cuatrimestre)
         return COMANDOS[args.comando](args, manifiesto)
     except ManifiestoInvalido as error:
         if os.environ.get("P1_DEPURAR"):

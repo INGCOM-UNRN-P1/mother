@@ -67,6 +67,24 @@ class Manifiesto:
     perfiles: dict[str, str]
     repos: list[Repo]
     origen: str
+    # Matriz de versiones por cuatrimestre: [cuatrimestres."2026-2"] repo = "tag o commit". Así todos
+    # los estudiantes de un cuatrimestre tienen la misma versión de cada herramienta.
+    cuatrimestres: dict[str, dict[str, str]] = field(default_factory=dict)
+    cuatrimestre_vigente: str = ""
+
+    def aplicar_cuatrimestre(self, nombre: str | None) -> str | None:
+        """Fija el `ref` de cada repo según la matriz del cuatrimestre (por defecto, el vigente).
+        Devuelve el cuatrimestre aplicado, o None si no hay ninguno."""
+        nombre = nombre or self.cuatrimestre_vigente or None
+        if nombre is None:
+            return None
+        if nombre not in self.cuatrimestres:
+            raise ManifiestoInvalido(f"cuatrimestre desconocido: {nombre} "
+                                     f"(en el manifiesto: {', '.join(sorted(self.cuatrimestres)) or 'ninguno'})")
+        for repo in self.repos:
+            if repo.nombre in self.cuatrimestres[nombre]:
+                repo.ref = self.cuatrimestres[nombre][repo.nombre]
+        return nombre
 
     def seleccionar(self, perfiles: list[str] | None = None, solo_instalables: bool = True) -> list[Repo]:
         desconocidos = set(perfiles or []) - set(self.perfiles)
@@ -101,9 +119,19 @@ def interpretar(texto: str, origen: str) -> Manifiesto:
         if repo.instalable and not repo.url:
             errores.append(f"{repo.nombre}: una herramienta instalable necesita `url`")
         repos.append(repo)
+    cuatrimestres = datos.get("cuatrimestres", {})
+    if not isinstance(cuatrimestres, dict) or not all(isinstance(v, dict) for v in cuatrimestres.values()):
+        errores.append("`cuatrimestres` tiene que ser una tabla de tablas: [cuatrimestres.\"2026-2\"] repo = \"ref\"")
+        cuatrimestres = {}
+    for nombre_c, matriz in cuatrimestres.items():
+        errores += [f"cuatrimestre {nombre_c}: «{r}» no es un repo del manifiesto" for r in matriz if r not in nombres]
+    vigente = str(datos.get("cuatrimestre_vigente", ""))
+    if vigente and vigente not in cuatrimestres:
+        errores.append(f"cuatrimestre_vigente = {vigente}, pero no hay [cuatrimestres.\"{vigente}\"]")
     if errores:
         raise ManifiestoInvalido(f"{origen}: manifiesto inválido:\n  " + "\n  ".join(errores))
-    return Manifiesto(perfiles, repos, origen)
+    return Manifiesto(perfiles, repos, origen,
+                      {k: {r: str(v) for r, v in m.items()} for k, m in cuatrimestres.items()}, vigente)
 
 
 def _cache() -> Path:
