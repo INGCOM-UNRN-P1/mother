@@ -395,7 +395,8 @@ paquete = "keymaker"
 ejecutables = ["keymaker"]
 perfiles = ["docente"]
 sistema = []
-estado = "activo"
+# Sin consumidores; la liberación de consignas pasa a uatu (decisión 1 del 05/10): falta archivar el repo.
+estado = "retirado"
 
 [[repo]]
 nombre = "uatu-tools"
