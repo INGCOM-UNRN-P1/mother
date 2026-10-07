@@ -447,9 +447,8 @@ estado = "activo"
 nombre = "voight"
 url = "https://github.com/INGCOM-UNRN/voight"
 tipo = "cli"
-# Antes moodle-toolbox (decisión 9): questions y moodle-toolbox quedan como alias que avisan.
 paquete = "voight"
-ejecutables = ["voight", "questions", "moodle-toolbox"]
+ejecutables = ["voight"]
 extras = ["ai", "ui", "languagetool"]
 perfiles = ["contenido", "docente"]
 sistema = []
