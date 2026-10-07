@@ -444,10 +444,10 @@ sistema = ["gcc"]
 estado = "activo"
 
 [[repo]]
-nombre = "moodle-toolbox"
-url = "https://github.com/INGCOM-UNRN/moodle-toolbox"
+nombre = "voight"
+url = "https://github.com/INGCOM-UNRN/voight"
 tipo = "cli"
-# Se llama voight; el repositorio conserva el nombre moodle-toolbox (decisión 9).
+# Antes moodle-toolbox (decisión 9): questions y moodle-toolbox quedan como alias que avisan.
 paquete = "voight"
 ejecutables = ["voight", "questions", "moodle-toolbox"]
 extras = ["ai", "ui", "languagetool"]
