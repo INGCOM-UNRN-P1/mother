@@ -446,8 +446,9 @@ estado = "activo"
 nombre = "moodle-toolbox"
 url = "https://github.com/INGCOM-UNRN/moodle-toolbox"
 tipo = "cli"
-paquete = "questions"
-ejecutables = ["moodle-toolbox", "questions"]
+# Se llama voight; el repositorio conserva el nombre moodle-toolbox (decisión 9).
+paquete = "voight"
+ejecutables = ["voight", "questions", "moodle-toolbox"]
 extras = ["ai", "ui", "languagetool"]
 perfiles = ["contenido", "docente"]
 sistema = []
