@@ -35,7 +35,7 @@ python3 mother.pyz instalar --perfil estudiante
 | `mother versiones [--perfil P] [--json]` | Versión instalada de cada herramienta frente a la esperada por el manifiesto |
 | `mother autoprueba [--perfil P] [--json]` | Verifica el contrato de línea de comandos (`-h`, `--version`, `doctor --json`) de lo instalado |
 | `mother sistema [--perfil P]` | Programas del sistema que necesita el perfil (gcc, gdb, valgrind…) |
-| `mother fijar CUATRIMESTRE [--perfil P] [--json]` | Imprime la matriz `[cuatrimestres."C"]` con el commit actual de cada repo, para pegar en el manifiesto |
+| `mother fijar CUATRIMESTRE [--perfil P] [--tags] [--json]` | Imprime la matriz `[cuatrimestres."C"]` con el commit actual (o, con `--tags`, el último tag) de cada repo, para pegar en el manifiesto |
 
 Perfiles: `estudiante`, `analisis`, `docente`, `contenido`, `aula`.
 
@@ -54,7 +54,10 @@ hal = "4591509"
 
 `instalar`, `actualizar` y `versiones` usan la matriz del vigente (o la de `--cuatrimestre C`); un
 repo que no figura sigue en su `ref` o en la rama principal. `mother fijar 2026-2` arma el bloque
-con el último commit de cada repo.
+con el último commit de cada repo; con `--tags`, con su último tag `vX.Y.Z` publicado, y avisa si
+hay commits publicados después de ese tag (falta un release) o si el repo no tiene tags. El
+procedimiento del cuatrimestre (releases, matriz, manifiesto y `mother.pyz`) está en
+[`p1-tools/RELEASES.md`](https://github.com/INGCOM-UNRN-P1/p1-tools/blob/main/RELEASES.md).
 
 ### De dónde sale el manifiesto
 

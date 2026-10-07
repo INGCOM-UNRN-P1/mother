@@ -356,3 +356,32 @@ def test_zipapp(tmp_path):
                            env=dict(SALIDA_WINDOWS, XDG_CACHE_HOME=str(tmp_path)))
     assert tabla.returncode == 0, tabla.stderr.decode("utf-8", "replace")
     assert "ripley" in tabla.stdout.decode("utf-8")
+
+
+# ── fijar ────────────────────────────────────────────────────────────────────────────────
+
+
+def _ls_remote_falso(respuestas: dict[tuple[str, ...], str]):
+    def correr(args, timeout=120.0):
+        return cli.Resultado(0, respuestas.get(tuple(args[2:]) if args[2] == "--tags" else (args[-1],), ""), "")
+    return correr
+
+
+def test_fijar_con_tags_toma_el_mayor_y_avisa_si_hay_commits_despues(ruta_manifiesto, monkeypatch, capsys):
+    url = "https://github.com/INGCOM-UNRN-P1/falsa"
+    monkeypatch.setattr(cli, "correr", _ls_remote_falso({
+        ("HEAD",): "c0ffee\tHEAD\n",
+        ("--tags", url, "v*"): "aaa\trefs/tags/v0.9.0\nt10\trefs/tags/v0.10.0\nbbb\trefs/tags/v0.10.0^{}\n",
+    }))
+    assert _mother(ruta_manifiesto, "fijar", "2027-1", "--perfil", "estudiante", "--tags", "--json") == 0
+    datos = json.loads(capsys.readouterr().out)
+    assert datos["matriz"] == {"falsa": "v0.10.0"}
+    assert datos["avisos"] == ["falsa: hay commits publicados después de v0.10.0 (¿falta el release?)"]
+
+
+def test_fijar_con_tags_sin_tags_fija_el_commit(ruta_manifiesto, monkeypatch, capsys):
+    monkeypatch.setattr(cli, "correr", _ls_remote_falso({("HEAD",): "c0ffee\tHEAD\n"}))
+    assert _mother(ruta_manifiesto, "fijar", "2027-1", "--perfil", "estudiante", "--tags") == 0
+    salida = capsys.readouterr()
+    assert 'falsa = "c0ffee"' in salida.out
+    assert "falsa: sin tags vX.Y.Z" in salida.err

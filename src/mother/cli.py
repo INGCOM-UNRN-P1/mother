@@ -12,6 +12,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -216,25 +217,61 @@ def cmd_versiones(args: argparse.Namespace, manifiesto: Manifiesto) -> int:
     return 0
 
 
+RE_TAG_SEMVER = re.compile(r"^refs/tags/v(\d+)\.(\d+)\.(\d+)(\^\{\})?$")
+
+
+def _ultimo_tag(url: str) -> tuple[str, str] | None:
+    """(tag vX.Y.Z más alto publicado, commit al que apunta), o None si no hay ninguno."""
+    res = correr(["git", "ls-remote", "--tags", url, "v*"], timeout=30)
+    if res.rc != 0:
+        return None
+    commits: dict[tuple[int, int, int], dict[bool, str]] = {}
+    for linea in res.salida.splitlines():
+        partes = linea.split()
+        coincide = RE_TAG_SEMVER.match(partes[1]) if len(partes) == 2 else None
+        if coincide:
+            clave = (int(coincide[1]), int(coincide[2]), int(coincide[3]))
+            commits.setdefault(clave, {})[bool(coincide[4])] = partes[0]
+    if not commits:
+        return None
+    mayor = max(commits)
+    # Un tag anotado trae también la línea pelada (^{}) con el commit; uno liviano, solo la suya.
+    commit = commits[mayor].get(True) or commits[mayor][False]
+    return "v{}.{}.{}".format(*mayor), commit
+
+
 def cmd_fijar(args: argparse.Namespace, manifiesto: Manifiesto) -> int:
     """Imprime [cuatrimestres."C"] con el commit actual de la rama principal de cada repo (git
-    ls-remote): se pega en ecosistema.toml y se publica junto con cuatrimestre_vigente."""
-    matriz, sin_dato = {}, []
+    ls-remote), o con su último tag vX.Y.Z (--tags): se pega en ecosistema.toml y se publica
+    junto con cuatrimestre_vigente."""
+    matriz, sin_dato, avisos = {}, [], []
     for repo in manifiesto.seleccionar(_perfiles(args)):
         res = correr(["git", "ls-remote", repo.url, "HEAD"], timeout=30)
         commit = res.salida.split()[0] if res.rc == 0 and res.salida.strip() else ""
-        if commit:
-            matriz[repo.nombre] = commit
-        else:
+        if not commit:
             sin_dato.append(repo.nombre)
+            continue
+        if args.tags:
+            tag = _ultimo_tag(repo.url)
+            if tag is None:
+                avisos.append(f"{repo.nombre}: sin tags vX.Y.Z, se fija el commit")
+            else:
+                if tag[1] != commit:
+                    avisos.append(f"{repo.nombre}: hay commits publicados después de {tag[0]} (¿falta el release?)")
+                matriz[repo.nombre] = tag[0]
+                continue
+        matriz[repo.nombre] = commit
     if args.json:
-        print(json.dumps({"cuatrimestre": args.nombre, "matriz": matriz, "sin_dato": sin_dato}, ensure_ascii=False, indent=2))
+        print(json.dumps({"cuatrimestre": args.nombre, "matriz": matriz, "sin_dato": sin_dato, "avisos": avisos},
+                         ensure_ascii=False, indent=2))
     else:
         print(f'[cuatrimestres."{args.nombre}"]')
         for nombre, commit in matriz.items():
             print(f'{nombre} = "{commit}"')
         for nombre in sin_dato:
             print(f"# {nombre}: no se pudo consultar el repositorio", file=sys.stderr)
+        for aviso in avisos:
+            print(f"# {aviso}", file=sys.stderr)
     return 1 if sin_dato else 0
 
 
@@ -397,9 +434,11 @@ def construir_parser() -> argparse.ArgumentParser:
     p = sub.add_parser("sistema", help="programas del sistema que necesita un perfil (gcc, gdb…)")
     perfil(p)
 
-    p = sub.add_parser("fijar", help="la matriz de versiones de un cuatrimestre con el último commit de cada repo")
+    p = sub.add_parser("fijar", help="la matriz de versiones de un cuatrimestre con el último commit (o tag) de cada repo")
     perfil(p)
     p.add_argument("nombre", metavar="CUATRIMESTRE", help="por ejemplo 2026-2")
+    p.add_argument("--tags", action="store_true",
+                   help="fijar el último tag vX.Y.Z de cada repo en lugar del último commit")
     p.add_argument("--json", action="store_true")
     return parser
 
