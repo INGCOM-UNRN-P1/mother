@@ -11,7 +11,9 @@
 #                  varios nombres de paquete están tomados en PyPI por terceros)
 #   tipo           cli | biblioteca | extension-vscode | apps-script | contenido
 #                  | plantilla | libreria-c | ejemplo | entorno | documentacion
-#                  | android | especificacion | workflows | datos
+#                  | android | especificacion | workflows | datos | binario
+#                  (binario: ejecutable compilado que se distribuye en los releases del repo,
+#                  no con uv: mother no lo instala)
 #   paquete        nombre del paquete Python (tipo cli/biblioteca)
 #   ejecutables    comandos que instala
 #   extras         extras a instalar junto con el paquete
@@ -522,21 +524,30 @@ tipo = "cli"
 paquete = "mother"
 ejecutables = ["mother"]
 perfiles = ["estudiante", "analisis", "docente", "contenido", "aula"]
-estado = "sin-publicar"
+estado = "activo"
+
+[[repo]]
+nombre = "jonesy"
+url = "https://github.com/INGCOM-UNRN-P1/jonesy"
+tipo = "binario"
+ejecutables = ["jonesy"]
+perfiles = ["estudiante"]
+sistema = ["gcc", "gdb", "make"]
+estado = "activo"
 
 [[repo]]
 nombre = "sulaco"
 url = "https://github.com/INGCOM-UNRN-P1/sulaco"
 tipo = "workflows"
 perfiles = ["docente"]
-estado = "sin-publicar"
+estado = "activo"
 
 [[repo]]
 nombre = "corpus"
 url = "https://github.com/INGCOM-UNRN-P1/corpus"
 tipo = "datos"
 perfiles = ["docente"]
-estado = "sin-publicar"
+estado = "activo"
 
 [[repo]]
 nombre = "yutani"
