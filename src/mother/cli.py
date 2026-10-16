@@ -92,6 +92,9 @@ def cmd_instalar(args: argparse.Namespace, manifiesto: Manifiesto) -> int:
         print("Indicá qué instalar: --perfil estudiante|analisis|docente|contenido|aula (repetible) o --todo.",
               file=sys.stderr)
         return 2
+    if args.editable and not args.local:
+        print("--editable solo tiene sentido con --local RAIZ (los clones que se van a editar).", file=sys.stderr)
+        return 2
     if not args.simular and shutil.which("uv") is None:
         print(f"Error: mother instala con uv y no está en el PATH. Instalalo siguiendo {URL_UV}", file=sys.stderr)
         return 1
@@ -100,7 +103,10 @@ def cmd_instalar(args: argparse.Namespace, manifiesto: Manifiesto) -> int:
         comando = ["uv", "tool", "install"]
         if args.forzar:
             comando.append("--force")
-        if args.local:
+        if args.local and args.editable:
+            # Modo docente: los cambios en el clon se ven sin reinstalar (lo que hacía install_tools.sh).
+            comando += ["--editable", repo.requisito_local(args.local)]
+        elif args.local:
             # --reinstall-package: sin él uv reutiliza una rueda cacheada y se prueba código viejo.
             comando += ["--reinstall-package", repo.paquete, repo.requisito_local(args.local)]
         else:
@@ -412,6 +418,8 @@ def construir_parser() -> argparse.ArgumentParser:
     p.add_argument("--todo", action="store_true", help="todas las herramientas activas")
     p.add_argument("--local", type=lambda s: __import__("pathlib").Path(s), metavar="RAIZ",
                    help="instalar desde clones locales en RAIZ/<carpeta> (prueba sin el monorepo)")
+    p.add_argument("--editable", action="store_true",
+                   help="con --local: instalar en modo editable (los cambios del clon se ven sin reinstalar)")
     p.add_argument("--forzar", action="store_true", help="reinstalar aunque ya esté instalada (uv --force)")
     p.add_argument("--simular", action="store_true", help="mostrar los comandos sin ejecutarlos")
 

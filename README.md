@@ -30,6 +30,7 @@ python3 mother.pyz instalar --perfil estudiante
 |:--|:--|
 | `mother listar [--perfil P]` | Herramientas del manifiesto y si están instaladas |
 | `mother instalar --perfil P` / `--todo` | `uv tool install git+https://…` de cada herramienta del perfil (`--simular` muestra los comandos; `--forzar` reinstala) |
+| `mother instalar --todo --local RAIZ [--editable]` | desde los clones de `RAIZ/<carpeta>` en vez de git; con `--editable`, en modo editable (lo que hacía `p1-tools/scripts/install_tools.sh`) |
 | `mother actualizar [--perfil P]` | `uv tool upgrade` de las herramientas instaladas |
 | `mother doctor [--perfil P] [--json]` | Diagnóstico agregado: Python, uv, git y el `doctor --json` de cada herramienta; sale con 1 si falta algo requerido |
 | `mother versiones [--perfil P] [--json]` | Versión instalada de cada herramienta frente a la esperada por el manifiesto |

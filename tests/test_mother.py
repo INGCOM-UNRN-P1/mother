@@ -206,6 +206,17 @@ def test_instalar_local_y_forzado(ruta_manifiesto, capsys):
     assert capsys.readouterr().out.strip() == f"$ uv tool install --force --reinstall-package falsa {ruta}"
 
 
+def test_instalar_local_editable(ruta_manifiesto, capsys):
+    """El modo docente de install_tools.sh: clones locales en modo editable."""
+    _mother(ruta_manifiesto, "instalar", "--perfil", "estudiante", "--local", "/raiz", "--editable", "--simular")
+    assert capsys.readouterr().out.strip() == f"$ uv tool install --editable {Path('/raiz') / 'falsa'}"
+
+
+def test_instalar_editable_exige_local(ruta_manifiesto, capsys):
+    assert _mother(ruta_manifiesto, "instalar", "--todo", "--editable", "--simular") == 2
+    assert "--local" in capsys.readouterr().err
+
+
 # ── doctor, versiones, autoprueba, sistema ───────────────────────────────────────────────
 
 def test_doctor_agregado(ruta_manifiesto, herramientas, capsys):
