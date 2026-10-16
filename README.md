@@ -97,6 +97,7 @@ python3 scripts/construir_zipapp.py --manifiesto ../p1-tools/ecosistema.toml   #
 |:--|:--|
 | `--manifiesto` | ruta o URL de ecosistema.toml (por defecto, el publicado en p1-tools) |
 | `--sin-red` | no descargar el manifiesto: usar la caché o la copia incluida |
+| `--cuatrimestre` | usar las versiones fijadas para este cuatrimestre (por defecto, el vigente del manifiesto) |
 
 ### Comandos
 
@@ -109,12 +110,13 @@ python3 scripts/construir_zipapp.py --manifiesto ../p1-tools/ecosistema.toml   #
 | `mother versiones` | versión instalada de cada herramienta |
 | `mother autoprueba` | verifica el contrato de línea de comandos de lo instalado |
 | `mother sistema` | programas del sistema que necesita un perfil (gcc, gdb…) |
+| `mother fijar` | la matriz de versiones de un cuatrimestre con el último commit (o tag) de cada repo |
 
 Ayuda de cada comando: `mother <comando> -h`.
 
 ### Salida JSON
 
-Con `--json`, estos comandos emiten el resultado como JSON por la salida estándar, para usarlo desde scripts, ripley o dredd: `mother listar`, `mother doctor`, `mother versiones`, `mother autoprueba`. El de `doctor --json` lleva `schema_version` y `ok`.
+Con `--json`, estos comandos emiten el resultado como JSON por la salida estándar, para usarlo desde scripts, ripley o dredd: `mother listar`, `mother doctor`, `mother versiones`, `mother autoprueba`, `mother fijar`. El de `doctor --json` lleva `schema_version` y `ok`.
 
 ### Códigos de salida
 
