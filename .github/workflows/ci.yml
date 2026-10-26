@@ -82,13 +82,23 @@ jobs:
           python3 dist/mother.pyz --version
           python3 dist/mother.pyz --sin-red listar
 
+      # entorno verifica el zipapp descargado contra esta suma antes de ejecutarlo (Ola 11): sin
+      # SHA256SUMS en el release, la instalación se cancela.
+      - name: Calcular la suma SHA256
+        working-directory: dist
+        run: sha256sum mother.pyz > SHA256SUMS && cat SHA256SUMS
+
       - uses: actions/upload-artifact@v7
         with:
           name: mother.pyz
-          path: dist/mother.pyz
+          path: |
+            dist/mother.pyz
+            dist/SHA256SUMS
 
       - name: Publicar el release
         if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v2
         with:
-          files: dist/mother.pyz
+          files: |
+            dist/mother.pyz
+            dist/SHA256SUMS
