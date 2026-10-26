@@ -33,6 +33,7 @@ python3 mother.pyz instalar --perfil estudiante
 | `mother instalar --todo --local RAIZ [--editable]` | desde los clones de `RAIZ/<carpeta>` en vez de git; con `--editable`, en modo editable (lo que hacía `p1-tools/scripts/install_tools.sh`) |
 | `mother actualizar [--perfil P]` | `uv tool upgrade` de las herramientas instaladas |
 | `mother doctor [--perfil P] [--json]` | Diagnóstico agregado: Python, uv, git y el `doctor --json` de cada herramienta; sale con 1 si falta algo requerido |
+| `mother doctor --fix [--simular]` | Antes del diagnóstico, repara los comandos de las herramientas: quita los shims huérfanos de `~/.local/bin` (enlaces a un entorno de uv que ya no existe), devuelve el permiso de ejecución y rehace sin red el enlace de una herramienta instalada a la que le falta el comando. Sólo toca enlaces hacia `uv tool dir` y comandos del manifiesto; sin `--fix`, el chequeo `comandos` avisa si hay algo para reparar |
 | `mother versiones [--perfil P] [--json]` | Versión instalada de cada herramienta frente a la esperada por el manifiesto |
 | `mother autoprueba [--perfil P] [--json]` | Verifica el contrato de línea de comandos (`-h`, `--version`, `doctor --json`) de lo instalado |
 | `mother sistema [--perfil P]` | Programas del sistema que necesita el perfil (gcc, gdb, valgrind…) |

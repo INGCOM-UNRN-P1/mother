@@ -17,6 +17,7 @@ import shutil
 import subprocess
 import sys
 from dataclasses import dataclass
+from pathlib import Path
 
 from mother import __version__
 from mother.manifiesto import Manifiesto, ManifiestoInvalido, Repo, cargar
@@ -152,9 +153,25 @@ def _chequeos_base() -> list[dict]:
     return chequeos
 
 
+def _chequeo_comandos(manifiesto: Manifiesto, perfiles: list[str] | None) -> list[dict]:
+    """Shims huérfanos, permisos y enlaces faltantes (lo que arregla `doctor --fix`)."""
+    from mother.reparar import diagnosticar, directorios_uv
+
+    entornos, binarios = directorios_uv()
+    if entornos is None or binarios is None:
+        return []
+    pendientes = diagnosticar(manifiesto.seleccionar(perfiles), entornos, binarios)
+    detalle = (f"{len(pendientes)} para reparar: " + ", ".join(sorted({Path(r.objetivo).name for r in pendientes}))
+               if pendientes else f"apuntan a su entorno ({binarios})")
+    return [{"nombre": "comandos", "requerido": False, "ok": not pendientes, "detalle": detalle,
+             "proposito": "Comandos de las herramientas en el PATH",
+             "sugerencia": "mother doctor --fix" if pendientes else ""}]
+
+
 def informe_doctor(manifiesto: Manifiesto, perfiles: list[str] | None) -> dict:
     """Doctor agregado: el propio de mother más el `doctor --json` de cada herramienta instalada."""
     chequeos = _chequeos_base()
+    chequeos += _chequeo_comandos(manifiesto, perfiles)
     herramientas = {}
     requeridas = {r.nombre for r in manifiesto.seleccionar(perfiles)} if perfiles else set()
     for repo in manifiesto.seleccionar(perfiles):
@@ -191,8 +208,35 @@ def informe_doctor(manifiesto: Manifiesto, perfiles: list[str] | None) -> dict:
     }
 
 
+def _reparar(args: argparse.Namespace, manifiesto: Manifiesto) -> list[dict] | None:
+    """`doctor --fix`: shims huérfanos, permisos y enlaces (mother.reparar). None si no hay uv."""
+    from mother.reparar import aplicar, diagnosticar, directorios_uv
+
+    entornos, binarios = directorios_uv()
+    if entornos is None or binarios is None:
+        print(f"No se puede reparar: uv no está en el PATH ({URL_UV}).", file=sys.stderr)
+        return None
+    reparaciones = diagnosticar(manifiesto.seleccionar(_perfiles(args)), entornos, binarios)
+    if not args.simular:
+        aplicar(reparaciones)
+    if not args.json:
+        if not reparaciones:
+            print("✓ Nada que reparar: los comandos de las herramientas apuntan a su entorno.\n")
+        for r in reparaciones:
+            marca = "·" if r.hecha is None else ("✓" if r.hecha else "✗")
+            print(f"{marca} {r.accion}: {r.objetivo} ({r.detalle}){' — ' + r.error if r.error else ''}")
+        if reparaciones:
+            print("(simulación: no se cambió nada)\n" if args.simular else "")
+    return [r.to_dict() for r in reparaciones]
+
+
 def cmd_doctor(args: argparse.Namespace, manifiesto: Manifiesto) -> int:
+    reparaciones = _reparar(args, manifiesto) if args.fix else None
+    if args.fix and reparaciones is None:
+        return 1
     datos = informe_doctor(manifiesto, _perfiles(args))
+    if reparaciones is not None:
+        datos["reparaciones"] = reparaciones
     if args.json:
         print(json.dumps(datos, ensure_ascii=False, indent=2))
     else:
@@ -430,6 +474,9 @@ def construir_parser() -> argparse.ArgumentParser:
     p = sub.add_parser("doctor", help="diagnóstico agregado: mother más el doctor de cada herramienta")
     perfil(p)
     p.add_argument("--json", action="store_true", help="informe JSON con schema_version")
+    p.add_argument("--fix", action="store_true",
+                   help="reparar antes del diagnóstico: shims huérfanos, permisos de ejecución y enlaces faltantes")
+    p.add_argument("--simular", action="store_true", help="con --fix: mostrar qué se repararía sin cambiar nada")
 
     p = sub.add_parser("versiones", help="versión instalada de cada herramienta")
     perfil(p)
