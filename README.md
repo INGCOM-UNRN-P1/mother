@@ -38,6 +38,7 @@ python3 mother.pyz instalar --perfil estudiante
 | `mother autoprueba [--perfil P] [--json]` | Verifica el contrato de línea de comandos (`-h`, `--version`, `doctor --json`) de lo instalado |
 | `mother sistema [--perfil P]` | Programas del sistema que necesita el perfil (gcc, gdb, valgrind…) |
 | `mother fijar CUATRIMESTRE [--perfil P] [--tags] [--json]` | Imprime la matriz `[cuatrimestres."C"]` con el commit actual (o, con `--tags`, el último tag) de cada repo, para pegar en el manifiesto |
+| `mother auditar [--cuatrimestre C] [--remoto] [--solo-tags] [--exigir-vigente] [--json]` | Audita la matriz del cuatrimestre (por defecto, el vigente): cada herramienta activa fijada a un tag `vX.Y.Z` o a un commit completo, nunca a una rama (`main`) ni a un commit abreviado; con `--remoto`, que el tag esté publicado y no exista una rama con ese nombre. Sale con 1 si hay algo mutable o sin fijar (lo corre el E2E de p1-tools) |
 
 Perfiles: `estudiante`, `analisis`, `docente`, `contenido`, `aula`.
 
@@ -51,8 +52,10 @@ cuatrimestre_vigente = "2026-2"
 
 [cuatrimestres."2026-2"]
 gaff = "v0.3.0"
-hal = "4591509"
+hal = "45915097c1f3a0b52c8e2a4f6d1b7e9c3a5f8d20"
 ```
+
+Cada valor es un tag `vX.Y.Z` o un commit **completo**: una rama o un commit abreviado pueden moverse, y `mother auditar` (que corre el E2E de p1-tools) los rechaza.
 
 `instalar`, `actualizar` y `versiones` usan la matriz del vigente (o la de `--cuatrimestre C`); un
 repo que no figura sigue en su `ref` o en la rama principal. `mother fijar 2026-2` arma el bloque

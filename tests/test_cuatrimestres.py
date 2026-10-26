@@ -65,3 +65,53 @@ def test_fijar(monkeypatch, capsys, tmp_path):
     assert cli.main(["--manifiesto", str(archivo), "fijar", "2027-1"]) == 0
     salida = capsys.readouterr().out
     assert '[cuatrimestres."2027-1"]' in salida and 'gaff = "deadbeef' in salida
+
+
+# ── auditar (Ola 11): nada fijado a una rama ni a un commit abreviado ───────────────────────────
+
+COMMIT = "0123456789abcdef0123456789abcdef01234567"
+
+
+def test_auditar_marca_lo_mutable_y_lo_sin_fijar():
+    m = interpretar(BASE, "prueba")
+    datos = cli.auditar_matriz(m, None, None)
+    assert datos["cuatrimestre"] == "2026-2" and datos["fijadas"] == {"gaff": "v0.3.0", "hal": "abc123"}
+    assert len(datos["problemas"]) == 1 and "«abc123» no es un tag" in datos["problemas"][0]
+    viejo = cli.auditar_matriz(m, "2026-1", None)
+    assert viejo["problemas"] == ["hal: sin fijar en 2026-1: se instalaría la rama principal (mutable)"]
+    rama = interpretar(BASE.replace('hal = "abc123"', 'hal = "main"'), "prueba")
+    assert "«main» no es un tag" in cli.auditar_matriz(rama, None, None)["problemas"][0]
+
+
+def test_auditar_acepta_tags_y_commits_completos_y_solo_tags():
+    m = interpretar(BASE.replace('hal = "abc123"', f'hal = "{COMMIT}"'), "prueba")
+    assert cli.auditar_matriz(m, None, None)["problemas"] == []
+    (problema,) = cli.auditar_matriz(m, None, None, solo_tags=True)["problemas"]
+    assert problema.startswith("hal: fijada a un commit")
+
+
+def test_auditar_remoto(monkeypatch):
+    m = interpretar(BASE.replace('hal = "abc123"', 'hal = "v1.0.0"'), "prueba")
+    salidas = {"gaff": "x\trefs/tags/v0.3.0\n", "hal": "y\trefs/heads/v1.0.0\n"}
+
+    def correr(args, timeout=0):
+        return cli.Resultado(0, salidas[args[2].rsplit("/", 1)[1]], "")
+
+    monkeypatch.setattr(cli, "correr", correr)
+    assert cli.auditar_matriz(m, None, None, remoto=True)["problemas"] == [
+        "hal: «v1.0.0» también es una rama de https://github.com/INGCOM-UNRN-P1/hal"]
+    salidas["hal"] = ""
+    assert "no está publicado" in cli.auditar_matriz(m, None, None, remoto=True)["problemas"][0]
+
+
+def test_cli_auditar(tmp_path, capsys):
+    ruta = tmp_path / "ecosistema.toml"
+    ruta.write_text(BASE, encoding="utf-8")
+    assert cli.main(["--manifiesto", str(ruta), "auditar"]) == 1
+    assert "✗ hal" in capsys.readouterr().out
+    sin_vigente = BASE.replace('cuatrimestre_vigente = "2026-2"\n', "")
+    ruta.write_text(sin_vigente, encoding="utf-8")
+    assert cli.main(["--manifiesto", str(ruta), "auditar"]) == 0
+    assert "rama principal" in capsys.readouterr().out
+    assert cli.main(["--manifiesto", str(ruta), "auditar", "--exigir-vigente", "--json"]) == 1
+    assert '"ok": false' in capsys.readouterr().out

@@ -325,6 +325,69 @@ def cmd_fijar(args: argparse.Namespace, manifiesto: Manifiesto) -> int:
     return 1 if sin_dato else 0
 
 
+# Lo único que no se mueve: un tag de versión o un commit completo. Una rama (main) o un commit
+# abreviado pueden cambiar de destino, y entonces dos estudiantes del mismo cuatrimestre instalan
+# cosas distintas.
+RE_REF_INMUTABLE = re.compile(r"^(?:[0-9a-f]{40}|v\d+\.\d+\.\d+)$")
+
+
+def auditar_matriz(manifiesto: Manifiesto, cuatrimestre: str | None, perfiles: list[str] | None,
+                   remoto: bool = False, solo_tags: bool = False) -> dict:
+    """Problemas y avisos de la matriz de versiones de un cuatrimestre (por defecto, el vigente)."""
+    nombre = cuatrimestre or manifiesto.cuatrimestre_vigente or None
+    problemas: list[str] = []
+    avisos: list[str] = []
+    if nombre is None:
+        avisos.append("el manifiesto no tiene cuatrimestre_vigente: mother instala la rama principal de "
+                      "cada repo (mutable); fijala con `mother fijar <cuatrimestre> --tags`")
+        return {"cuatrimestre": None, "problemas": problemas, "avisos": avisos, "fijadas": {}}
+    if nombre not in manifiesto.cuatrimestres:
+        problemas.append(f"no hay [cuatrimestres.\"{nombre}\"] en el manifiesto")
+        return {"cuatrimestre": nombre, "problemas": problemas, "avisos": avisos, "fijadas": {}}
+    matriz = manifiesto.cuatrimestres[nombre]
+    fijadas: dict[str, str] = {}
+    for repo in manifiesto.seleccionar(perfiles):
+        ref = matriz.get(repo.nombre) or repo.ref
+        if not ref:
+            problemas.append(f"{repo.nombre}: sin fijar en {nombre}: se instalaría la rama principal (mutable)")
+            continue
+        fijadas[repo.nombre] = ref
+        if not RE_REF_INMUTABLE.match(ref):
+            problemas.append(f"{repo.nombre}: «{ref}» no es un tag vX.Y.Z ni un commit completo de 40 caracteres "
+                             f"(una rama o un commit abreviado pueden moverse)")
+            continue
+        if solo_tags and not ref.startswith("v"):
+            problemas.append(f"{repo.nombre}: fijada a un commit ({ref[:12]}…), no a un tag vX.Y.Z")
+        if remoto:
+            res = correr(["git", "ls-remote", repo.url, f"refs/tags/{ref}", f"refs/heads/{ref}"], timeout=30)
+            if res.rc != 0:
+                avisos.append(f"{repo.nombre}: no se pudo consultar {repo.url}")
+            elif f"refs/heads/{ref}" in res.salida:
+                problemas.append(f"{repo.nombre}: «{ref}» también es una rama de {repo.url}")
+            elif ref.startswith("v") and f"refs/tags/{ref}" not in res.salida:
+                problemas.append(f"{repo.nombre}: el tag {ref} no está publicado en {repo.url}")
+    return {"cuatrimestre": nombre, "problemas": problemas, "avisos": avisos, "fijadas": fijadas}
+
+
+def cmd_auditar(args: argparse.Namespace, manifiesto: Manifiesto) -> int:
+    datos = auditar_matriz(manifiesto, args.cuatrimestre, _perfiles(args), remoto=args.remoto,
+                           solo_tags=args.solo_tags)
+    if args.exigir_vigente and datos["cuatrimestre"] is None:
+        datos["problemas"].append("falta cuatrimestre_vigente (--exigir-vigente)")
+    if args.json:
+        print(json.dumps({"schema_version": SCHEMA_VERSION, **datos, "ok": not datos["problemas"]},
+                         ensure_ascii=False, indent=2))
+    else:
+        for aviso in datos["avisos"]:
+            print(f"· {aviso}")
+        for problema in datos["problemas"]:
+            print(f"✗ {problema}")
+        if not datos["problemas"] and datos["cuatrimestre"]:
+            print(f"✓ Cuatrimestre {datos['cuatrimestre']}: {len(datos['fijadas'])} herramientas fijadas a tags o "
+                  f"commits completos.")
+    return 1 if datos["problemas"] else 0
+
+
 def contrato(ejecutable: str) -> dict:
     """-h/--help, --version/-v y doctor --json (LINEAMIENTOS §3.2)."""
     resultado: dict = {"ejecutable": ejecutable}
@@ -495,11 +558,21 @@ def construir_parser() -> argparse.ArgumentParser:
     p.add_argument("--tags", action="store_true",
                    help="fijar el último tag vX.Y.Z de cada repo en lugar del último commit")
     p.add_argument("--json", action="store_true")
+
+    p = sub.add_parser("auditar", help="la matriz del cuatrimestre fijada a tags o commits completos, nunca a ramas (para el CI)")
+    perfil(p)
+    p.add_argument("--remoto", action="store_true",
+                   help="consultar cada repo: que el tag esté publicado y que no haya una rama con ese nombre")
+    p.add_argument("--solo-tags", action="store_true", help="un commit fijado también es un problema (pide releases)")
+    p.add_argument("--exigir-vigente", action="store_true",
+                   help="sin cuatrimestre_vigente es un problema (no un aviso)")
+    p.add_argument("--json", action="store_true")
     return parser
 
 
 COMANDOS = {"listar": cmd_listar, "instalar": cmd_instalar, "actualizar": cmd_actualizar, "doctor": cmd_doctor,
-            "versiones": cmd_versiones, "autoprueba": cmd_autoprueba, "sistema": cmd_sistema, "fijar": cmd_fijar}
+            "versiones": cmd_versiones, "autoprueba": cmd_autoprueba, "sistema": cmd_sistema, "fijar": cmd_fijar,
+            "auditar": cmd_auditar}
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -511,7 +584,7 @@ def main(argv: list[str] | None = None) -> int:
         return 0
     try:
         manifiesto = cargar(args.manifiesto, usar_red=not args.sin_red)
-        if args.comando != "fijar":
+        if args.comando not in ("fijar", "auditar"):
             manifiesto.aplicar_cuatrimestre(args.cuatrimestre)
         return COMANDOS[args.comando](args, manifiesto)
     except ManifiestoInvalido as error:
