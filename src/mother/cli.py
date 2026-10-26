@@ -89,6 +89,8 @@ def cmd_listar(args: argparse.Namespace, manifiesto: Manifiesto) -> int:
 
 
 def cmd_instalar(args: argparse.Namespace, manifiesto: Manifiesto) -> int:
+    if args.desde_archivo:
+        return _instalar_offline(args)
     if not args.perfil and not args.todo:
         print("Indicá qué instalar: --perfil estudiante|analisis|docente|contenido|aula (repetible) o --todo.",
               file=sys.stderr)
@@ -118,6 +120,41 @@ def cmd_instalar(args: argparse.Namespace, manifiesto: Manifiesto) -> int:
     if fallidas:
         print(f"\nNo se pudieron instalar: {', '.join(fallidas)}", file=sys.stderr)
         return 1
+    return 0
+
+
+def _instalar_offline(args: argparse.Namespace) -> int:
+    """`instalar --desde-archivo`: el paquete de `empaquetar-offline`, sin red (mother.offline)."""
+    from mother.offline import ErrorDePaquete, instalar_desde_archivo
+    from mother.reparar import directorios_uv
+
+    if not args.desde_archivo.is_file():
+        print(f"Error: no existe {args.desde_archivo}", file=sys.stderr)
+        return 2
+    try:
+        return instalar_desde_archivo(args.desde_archivo, forzar=args.forzar, simular=args.simular,
+                                      binarios=directorios_uv()[1])
+    except ErrorDePaquete as error:
+        print(f"Error: {error}. No se instaló nada.", file=sys.stderr)
+        return 1
+
+
+def cmd_empaquetar(args: argparse.Namespace, manifiesto: Manifiesto) -> int:
+    from mother.offline import ErrorDePaquete, empaquetar, tamanio, version_python
+
+    perfiles = _perfiles(args) or ["estudiante"]
+    repos = manifiesto.seleccionar(perfiles)
+    salida = args.salida or Path(f"mother-offline-{'-'.join(perfiles)}.tar.gz")
+    try:
+        datos = empaquetar(repos, salida, perfiles=perfiles, cuatrimestre=manifiesto.cuatrimestre_vigente or None,
+                           python=args.python or version_python(), zipapps=not args.sin_zipapps)
+    except ErrorDePaquete as error:
+        print(f"Error: {error}", file=sys.stderr)
+        return 1
+    print(f"\n✓ {salida} ({tamanio(salida)}): {len(datos['herramientas'])} herramientas, "
+          f"{sum(1 for a in datos['archivos'] if a.startswith('ruedas/'))} ruedas para Python {datos['python']} "
+          f"en {datos['plataforma']}" + (f", {', '.join(Path(z).name for z in datos['zipapps'])}" if datos["zipapps"] else "")
+          + f".\nInstalalo sin red con: python3 mother.pyz instalar --desde-archivo {salida.name}")
     return 0
 
 
@@ -523,12 +560,14 @@ def construir_parser() -> argparse.ArgumentParser:
     p = sub.add_parser("instalar", help="instala las herramientas de un perfil desde git")
     perfil(p)
     p.add_argument("--todo", action="store_true", help="todas las herramientas activas")
-    p.add_argument("--local", type=lambda s: __import__("pathlib").Path(s), metavar="RAIZ",
+    p.add_argument("--local", type=Path, metavar="RAIZ",
                    help="instalar desde clones locales en RAIZ/<carpeta> (prueba sin el monorepo)")
     p.add_argument("--editable", action="store_true",
                    help="con --local: instalar en modo editable (los cambios del clon se ven sin reinstalar)")
     p.add_argument("--forzar", action="store_true", help="reinstalar aunque ya esté instalada (uv --force)")
     p.add_argument("--simular", action="store_true", help="mostrar los comandos sin ejecutarlos")
+    p.add_argument("--desde-archivo", type=Path, metavar="PAQUETE",
+                   help="instalar sin red desde el .tar.gz de `mother empaquetar-offline` (verifica cada suma SHA-256)")
 
     p = sub.add_parser("actualizar", help="actualiza las herramientas instaladas")
     perfil(p)
@@ -559,6 +598,14 @@ def construir_parser() -> argparse.ArgumentParser:
                    help="fijar el último tag vX.Y.Z de cada repo en lugar del último commit")
     p.add_argument("--json", action="store_true")
 
+    p = sub.add_parser("empaquetar-offline",
+                       help="un .tar.gz con las ruedas y los zipapps de un perfil, para instalar sin red")
+    perfil(p)
+    p.add_argument("-o", "--salida", type=Path, metavar="ARCHIVO",
+                   help="por defecto, mother-offline-<perfil>.tar.gz en la carpeta actual")
+    p.add_argument("--python", metavar="X.Y", help="versión de Python de las máquinas del laboratorio (por defecto, esta)")
+    p.add_argument("--sin-zipapps", action="store_true", help="sin mother.pyz ni ripley.pyz")
+
     p = sub.add_parser("auditar", help="la matriz del cuatrimestre fijada a tags o commits completos, nunca a ramas (para el CI)")
     perfil(p)
     p.add_argument("--remoto", action="store_true",
@@ -572,7 +619,7 @@ def construir_parser() -> argparse.ArgumentParser:
 
 COMANDOS = {"listar": cmd_listar, "instalar": cmd_instalar, "actualizar": cmd_actualizar, "doctor": cmd_doctor,
             "versiones": cmd_versiones, "autoprueba": cmd_autoprueba, "sistema": cmd_sistema, "fijar": cmd_fijar,
-            "auditar": cmd_auditar}
+            "auditar": cmd_auditar, "empaquetar-offline": cmd_empaquetar}
 
 
 def main(argv: list[str] | None = None) -> int:
