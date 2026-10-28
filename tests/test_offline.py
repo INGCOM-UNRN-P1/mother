@@ -150,13 +150,15 @@ def test_rechaza_archivos_de_mas_rutas_peligrosas_y_otra_plataforma(paquete, tmp
     with pytest.raises(offline.ErrorDePaquete, match="no permitida"):
         offline.instalar_desde_archivo(peligroso, simular=True)
 
+    otra_plat = "win-amd64" if sysconfig.get_platform() != "win-amd64" else "linux-x86_64"
+
     def otra_plataforma(miembro, contenido):
         if miembro.name == "paquete/paquete.json":
-            contenido = json.dumps({**datos, "plataforma": "win-amd64"}).encode()
+            contenido = json.dumps({**datos, "plataforma": otra_plat}).encode()
             miembro.size = len(contenido)
         return miembro, contenido
 
-    with pytest.raises(offline.ErrorDePaquete, match="win-amd64"):
+    with pytest.raises(offline.ErrorDePaquete, match=otra_plat):
         offline.instalar_desde_archivo(_reescribir(paquete, tmp_path / "otra.tar.gz", otra_plataforma), simular=True)
 
 
