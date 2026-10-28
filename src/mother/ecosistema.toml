@@ -536,6 +536,17 @@ sistema = ["gcc", "gdb", "make"]
 estado = "activo"
 
 [[repo]]
+nombre = "construct"
+url = "https://github.com/INGCOM-UNRN-P1/construct"
+tipo = "cli"
+paquete = "construct"
+ejecutables = ["construct"]
+# Corre en el Host del alumno (Windows, macOS o Linux) y lleva el resto del perfil dentro de una VM.
+perfiles = ["estudiante"]
+sistema = ["git", "qemu-system-x86_64", "qemu-img"]
+estado = "activo"
+
+[[repo]]
 nombre = "sulaco"
 url = "https://github.com/INGCOM-UNRN-P1/sulaco"
 tipo = "workflows"
