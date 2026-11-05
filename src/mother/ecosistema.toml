@@ -677,12 +677,6 @@ perfiles = ["docente"]
 estado = "activo"
 
 [[repo]]
-nombre = "actividad-estudiante-ejemplo"
-tipo = "ejemplo"
-perfiles = ["estudiante"]
-estado = "activo"
-
-[[repo]]
 nombre = "smoke_scorm"
 tipo = "ejemplo"
 perfiles = ["contenido"]
