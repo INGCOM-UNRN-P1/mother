@@ -595,9 +595,9 @@ nombre = "grid"
 url = "https://github.com/INGCOM-UNRN-P1/grid"
 tipo = "extension-vscode"
 perfiles = ["aula"]
-# Su bitácora se puede reescribir (N-GRID-01): lo que aportaba (extensiones permitidas y
-# reglas de configuración del editor) está en uatu.
-estado = "deprecado"
+# Lo reemplaza uatu (N-GRID-01): su bitácora se podía reescribir, y lo que aportaba (extensiones
+# permitidas y reglas de configuración del editor) ya está ahí. Repo archivado y privado.
+estado = "retirado"
 
 [[repo]]
 nombre = "cyberdeck"
