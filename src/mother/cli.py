@@ -304,33 +304,45 @@ def cmd_versiones(args: argparse.Namespace, manifiesto: Manifiesto) -> int:
     return 0
 
 
+RE_TAG_RELEASE = re.compile(r"^refs/tags/(\d{4})-([A-C])\.(\d+)(\^\{\})?$")
 RE_TAG_SEMVER = re.compile(r"^refs/tags/v(\d+)\.(\d+)\.(\d+)(\^\{\})?$")
+RE_COMMIT_COMPLETO = re.compile(r"^[0-9a-f]{40}$")
 
 
 def _ultimo_tag(url: str) -> tuple[str, str] | None:
-    """(tag vX.Y.Z más alto publicado, commit al que apunta), o None si no hay ninguno."""
-    res = correr(["git", "ls-remote", "--tags", url, "v*"], timeout=30)
+    """(tag <año-release.minor> o vX.Y.Z más alto publicado, commit al que apunta), o None si no hay ninguno."""
+    res = correr(["git", "ls-remote", "--tags", url], timeout=30)
     if res.rc != 0:
         return None
-    commits: dict[tuple[int, int, int], dict[bool, str]] = {}
+    commits: dict[tuple[int, int, int, int], dict[bool, str]] = {}
+    nombres: dict[tuple[int, int, int, int], str] = {}
     for linea in res.salida.splitlines():
         partes = linea.split()
-        coincide = RE_TAG_SEMVER.match(partes[1]) if len(partes) == 2 else None
-        if coincide:
-            clave = (int(coincide[1]), int(coincide[2]), int(coincide[3]))
-            commits.setdefault(clave, {})[bool(coincide[4])] = partes[0]
+        if len(partes) != 2:
+            continue
+        m_rel = RE_TAG_RELEASE.match(partes[1])
+        if m_rel:
+            clave = (1, int(m_rel[1]), ord(m_rel[2]), int(m_rel[3]))
+            nombres[clave] = f"{m_rel[1]}-{m_rel[2]}.{m_rel[3]}"
+            commits.setdefault(clave, {})[bool(m_rel[4])] = partes[0]
+            continue
+        m_sem = RE_TAG_SEMVER.match(partes[1])
+        if m_sem:
+            clave = (0, int(m_sem[1]), int(m_sem[2]), int(m_sem[3]))
+            nombres[clave] = f"v{int(m_sem[1])}.{int(m_sem[2])}.{int(m_sem[3])}"
+            commits.setdefault(clave, {})[bool(m_sem[4])] = partes[0]
     if not commits:
         return None
     mayor = max(commits)
     # Un tag anotado trae también la línea pelada (^{}) con el commit; uno liviano, solo la suya.
     commit = commits[mayor].get(True) or commits[mayor][False]
-    return "v{}.{}.{}".format(*mayor), commit
+    return nombres[mayor], commit
 
 
 def cmd_fijar(args: argparse.Namespace, manifiesto: Manifiesto) -> int:
     """Imprime [cuatrimestres."C"] con el commit actual de la rama principal de cada repo (git
-    ls-remote), o con su último tag vX.Y.Z (--tags): se pega en ecosistema.toml y se publica
-    junto con cuatrimestre_vigente."""
+    ls-remote), o con su último tag <año-release.minor> (--tags): se pega en ecosistema.toml y se
+    publica junto con cuatrimestre_vigente."""
     matriz, sin_dato, avisos = {}, [], []
     for repo in manifiesto.seleccionar(_perfiles(args)):
         res = correr(["git", "ls-remote", repo.url, "HEAD"], timeout=30)
@@ -341,7 +353,7 @@ def cmd_fijar(args: argparse.Namespace, manifiesto: Manifiesto) -> int:
         if args.tags:
             tag = _ultimo_tag(repo.url)
             if tag is None:
-                avisos.append(f"{repo.nombre}: sin tags vX.Y.Z, se fija el commit")
+                avisos.append(f"{repo.nombre}: sin tags de release, se fija el commit")
             else:
                 if tag[1] != commit:
                     avisos.append(f"{repo.nombre}: hay commits publicados después de {tag[0]} (¿falta el release?)")
@@ -362,10 +374,10 @@ def cmd_fijar(args: argparse.Namespace, manifiesto: Manifiesto) -> int:
     return 1 if sin_dato else 0
 
 
-# Lo único que no se mueve: un tag de versión o un commit completo. Una rama (main) o un commit
-# abreviado pueden cambiar de destino, y entonces dos estudiantes del mismo cuatrimestre instalan
-# cosas distintas.
-RE_REF_INMUTABLE = re.compile(r"^(?:[0-9a-f]{40}|v\d+\.\d+\.\d+)$")
+# Lo único que no se mueve: un tag de versión (<año-release.minor> o SemVer heredado) o un commit
+# completo. Una rama (main) o un commit abreviado pueden cambiar de destino, y entonces dos
+# estudiantes del mismo cuatrimestre instalan cosas distintas.
+RE_REF_INMUTABLE = re.compile(r"^(?:[0-9a-f]{40}|\d{4}-[A-C]\.\d+|v\d+\.\d+\.\d+)$")
 
 
 def auditar_matriz(manifiesto: Manifiesto, cuatrimestre: str | None, perfiles: list[str] | None,
@@ -376,7 +388,7 @@ def auditar_matriz(manifiesto: Manifiesto, cuatrimestre: str | None, perfiles: l
     avisos: list[str] = []
     if nombre is None:
         avisos.append("el manifiesto no tiene cuatrimestre_vigente: mother instala la rama principal de "
-                      "cada repo (mutable); fijala con `mother fijar <cuatrimestre> --tags`")
+                      "cada repo (mutable); fijala con `mother fijar <año-release.minor> --tags`")
         return {"cuatrimestre": None, "problemas": problemas, "avisos": avisos, "fijadas": {}}
     if nombre not in manifiesto.cuatrimestres:
         problemas.append(f"no hay [cuatrimestres.\"{nombre}\"] en el manifiesto")
@@ -390,18 +402,19 @@ def auditar_matriz(manifiesto: Manifiesto, cuatrimestre: str | None, perfiles: l
             continue
         fijadas[repo.nombre] = ref
         if not RE_REF_INMUTABLE.match(ref):
-            problemas.append(f"{repo.nombre}: «{ref}» no es un tag vX.Y.Z ni un commit completo de 40 caracteres "
+            problemas.append(f"{repo.nombre}: «{ref}» no es un tag <año-release.minor> ni un commit completo de 40 caracteres "
                              f"(una rama o un commit abreviado pueden moverse)")
             continue
-        if solo_tags and not ref.startswith("v"):
-            problemas.append(f"{repo.nombre}: fijada a un commit ({ref[:12]}…), no a un tag vX.Y.Z")
+        es_commit = bool(RE_COMMIT_COMPLETO.match(ref))
+        if solo_tags and es_commit:
+            problemas.append(f"{repo.nombre}: fijada a un commit ({ref[:12]}…), no a un tag <año-release.minor>")
         if remoto:
             res = correr(["git", "ls-remote", repo.url, f"refs/tags/{ref}", f"refs/heads/{ref}"], timeout=30)
             if res.rc != 0:
                 avisos.append(f"{repo.nombre}: no se pudo consultar {repo.url}")
             elif f"refs/heads/{ref}" in res.salida:
                 problemas.append(f"{repo.nombre}: «{ref}» también es una rama de {repo.url}")
-            elif ref.startswith("v") and f"refs/tags/{ref}" not in res.salida:
+            elif not es_commit and f"refs/tags/{ref}" not in res.salida:
                 problemas.append(f"{repo.nombre}: el tag {ref} no está publicado en {repo.url}")
     return {"cuatrimestre": nombre, "problemas": problemas, "avisos": avisos, "fijadas": fijadas}
 
@@ -593,9 +606,9 @@ def construir_parser() -> argparse.ArgumentParser:
 
     p = sub.add_parser("fijar", help="la matriz de versiones de un cuatrimestre con el último commit (o tag) de cada repo")
     perfil(p)
-    p.add_argument("nombre", metavar="CUATRIMESTRE", help="por ejemplo 2026-2")
+    p.add_argument("nombre", metavar="RELEASE", help="por ejemplo 2027-A.0")
     p.add_argument("--tags", action="store_true",
-                   help="fijar el último tag vX.Y.Z de cada repo en lugar del último commit")
+                   help="fijar el último tag <año-release.minor> de cada repo en lugar del último commit")
     p.add_argument("--json", action="store_true")
 
     p = sub.add_parser("empaquetar-offline",

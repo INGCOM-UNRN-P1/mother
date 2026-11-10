@@ -382,17 +382,17 @@ def test_fijar_con_tags_toma_el_mayor_y_avisa_si_hay_commits_despues(ruta_manifi
     url = "https://github.com/INGCOM-UNRN-P1/falsa"
     monkeypatch.setattr(cli, "correr", _ls_remote_falso({
         ("HEAD",): "c0ffee\tHEAD\n",
-        ("--tags", url, "v*"): "aaa\trefs/tags/v0.9.0\nt10\trefs/tags/v0.10.0\nbbb\trefs/tags/v0.10.0^{}\n",
+        ("--tags", url): "aaa\trefs/tags/v0.9.0\nt10\trefs/tags/2027-A.0\nbbb\trefs/tags/2027-A.0^{}\n",
     }))
-    assert _mother(ruta_manifiesto, "fijar", "2027-1", "--perfil", "estudiante", "--tags", "--json") == 0
+    assert _mother(ruta_manifiesto, "fijar", "2027-A.0", "--perfil", "estudiante", "--tags", "--json") == 0
     datos = json.loads(capsys.readouterr().out)
-    assert datos["matriz"] == {"falsa": "v0.10.0"}
-    assert datos["avisos"] == ["falsa: hay commits publicados después de v0.10.0 (¿falta el release?)"]
+    assert datos["matriz"] == {"falsa": "2027-A.0"}
+    assert datos["avisos"] == ["falsa: hay commits publicados después de 2027-A.0 (¿falta el release?)"]
 
 
 def test_fijar_con_tags_sin_tags_fija_el_commit(ruta_manifiesto, monkeypatch, capsys):
     monkeypatch.setattr(cli, "correr", _ls_remote_falso({("HEAD",): "c0ffee\tHEAD\n"}))
-    assert _mother(ruta_manifiesto, "fijar", "2027-1", "--perfil", "estudiante", "--tags") == 0
+    assert _mother(ruta_manifiesto, "fijar", "2027-A.0", "--perfil", "estudiante", "--tags") == 0
     salida = capsys.readouterr()
     assert 'falsa = "c0ffee"' in salida.out
-    assert "falsa: sin tags vX.Y.Z" in salida.err
+    assert "falsa: sin tags de release" in salida.err
