@@ -139,3 +139,7 @@ Con `--json`, estos comandos emiten el resultado como JSON por la salida estánd
 ## Licencia
 
 GPL-3.0-or-later (ver `LICENSE`).
+
+## Contacto
+
+Martín René Vilugrón - mrvilugron@unrn.edu.ar - Ingeniería en Computación UNRN Andina
