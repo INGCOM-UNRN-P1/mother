@@ -86,13 +86,23 @@ class Manifiesto:
                 repo.ref = self.cuatrimestres[nombre][repo.nombre]
         return nombre
 
-    def seleccionar(self, perfiles: list[str] | None = None, solo_instalables: bool = True) -> list[Repo]:
+    def seleccionar(
+        self,
+        perfiles: list[str] | None = None,
+        solo_instalables: bool = True,
+        excluir: list[str] | None = None,
+    ) -> list[Repo]:
         desconocidos = set(perfiles or []) - set(self.perfiles)
         if desconocidos:
             raise ManifiestoInvalido(
                 f"perfil desconocido: {', '.join(sorted(desconocidos))} (disponibles: {', '.join(self.perfiles)})")
-        return [r for r in self.repos
-                if (not perfiles or set(perfiles) & set(r.perfiles)) and (r.instalable or not solo_instalables)]
+        excluidos = set(excluir or [])
+        return [
+            r for r in self.repos
+            if r.nombre not in excluidos
+            and (not perfiles or set(perfiles) & set(r.perfiles))
+            and (r.instalable or not solo_instalables)
+        ]
 
 
 def interpretar(texto: str, origen: str) -> Manifiesto:

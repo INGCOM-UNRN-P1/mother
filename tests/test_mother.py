@@ -217,6 +217,25 @@ def test_instalar_editable_exige_local(ruta_manifiesto, capsys):
     assert "--local" in capsys.readouterr().err
 
 
+def test_instalar_excluir_y_setup_construct(tmp_path, capsys):
+    manifiesto_con_construct = tmp_path / "eco.toml"
+    manifiesto_con_construct.write_text(
+        textwrap.dedent(MANIFIESTO)
+        + '\n[[repo]]\nnombre = "construct"\ntipo = "cli"\nestado = "activo"\n'
+        'url = "https://github.com/INGCOM-UNRN-P1/construct"\npaquete = "construct"\n'
+        'ejecutables = ["construct"]\nperfiles = ["estudiante"]\n',
+        encoding="utf-8",
+    )
+    assert _mother(manifiesto_con_construct, "instalar", "--perfil", "estudiante",
+                   "--excluir", "construct", "--simular") == 0
+    assert "construct" not in capsys.readouterr().out
+
+    assert _mother(manifiesto_con_construct, "instalar", "--perfil", "estudiante",
+                   "--setup-construct", "--forzar", "--simular") == 0
+    lineas = capsys.readouterr().out.splitlines()
+    assert lineas[-1] == "$ construct setup --forzar"
+
+
 # ── doctor, versiones, autoprueba, sistema ───────────────────────────────────────────────
 
 def test_doctor_agregado(ruta_manifiesto, herramientas, capsys):

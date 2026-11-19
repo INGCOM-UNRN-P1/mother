@@ -102,7 +102,11 @@ def cmd_instalar(args: argparse.Namespace, manifiesto: Manifiesto) -> int:
         print(f"Error: mother instala con uv y no está en el PATH. Instalalo siguiendo {URL_UV}", file=sys.stderr)
         return 1
     fallidas = []
-    for repo in manifiesto.seleccionar(None if args.todo else _perfiles(args)):
+    seleccionados = manifiesto.seleccionar(
+        None if args.todo else _perfiles(args),
+        excluir=getattr(args, "excluir", None),
+    )
+    for repo in seleccionados:
         comando = ["uv", "tool", "install"]
         if args.forzar:
             comando.append("--force")
@@ -117,6 +121,15 @@ def cmd_instalar(args: argparse.Namespace, manifiesto: Manifiesto) -> int:
         print("$ " + " ".join(f'"{c}"' if " " in c else c for c in comando), flush=True)
         if not args.simular and subprocess.run(comando).returncode != 0:
             fallidas.append(repo.nombre)
+    if (
+        getattr(args, "setup_construct", False)
+        and any(r.nombre == "construct" for r in seleccionados)
+        and "construct" not in fallidas
+    ):
+        cmd_setup = ["construct", "setup"] + (["--forzar"] if args.forzar else [])
+        print("$ " + " ".join(cmd_setup), flush=True)
+        if not args.simular and subprocess.run(cmd_setup).returncode != 0:
+            fallidas.append("construct (setup)")
     if fallidas:
         print(f"\nNo se pudieron instalar: {', '.join(fallidas)}", file=sys.stderr)
         return 1
@@ -579,6 +592,10 @@ def construir_parser() -> argparse.ArgumentParser:
                    help="con --local: instalar en modo editable (los cambios del clon se ven sin reinstalar)")
     p.add_argument("--forzar", action="store_true", help="reinstalar aunque ya esté instalada (uv --force)")
     p.add_argument("--simular", action="store_true", help="mostrar los comandos sin ejecutarlos")
+    p.add_argument("--excluir", action="append", metavar="HERRAMIENTA",
+                   help="no instalar esta herramienta (repetible, ej. construct dentro de la VM)")
+    p.add_argument("--setup-construct", action="store_true",
+                   help="ejecutar `construct setup` tras instalar construct para descargar la imagen del Guest")
     p.add_argument("--desde-archivo", type=Path, metavar="PAQUETE",
                    help="instalar sin red desde el .tar.gz de `mother empaquetar-offline` (verifica cada suma SHA-256)")
 
